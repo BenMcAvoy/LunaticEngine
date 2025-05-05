@@ -1,0 +1,11 @@
+# VS files
+.vs
+*.vcxproj.*
+
+# Build files
+vcpkg_installed
+x64
+x86
+
+# Runtime files
+imgui.ini

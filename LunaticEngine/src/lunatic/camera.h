@@ -1,6 +1,6 @@
 #pragma once
 
-#include "lunatic/shader.h"
+#include "shader.h"
 
 #include <glm/fwd.hpp>
 #include <glm/glm.hpp>
@@ -27,6 +27,7 @@ namespace Lunatic {
 
 		inline glm::mat4 getVP() const { return projection * view; }
 
+		glm::vec3 background = glm::vec3(0.15, 0.15, 0.15);
 	private:
 		void recalculateProjection();
 
@@ -37,7 +38,5 @@ namespace Lunatic {
 
 		glm::mat4 projection;
 		glm::mat4 view;
-
-		glm::vec3 background = glm::vec3(0.15, 0.15, 0.15);
 	};
 } // namespace Lunatic

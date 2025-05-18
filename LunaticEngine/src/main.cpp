@@ -1,16 +1,15 @@
 #include "pch.h"
 
-#include "lunatic/prelude.h"
+#include "lunatic/engine.h"
 
 int main(void) {
+	spdlog::set_level(spdlog::level::trace);
+
 	Lunatic::Engine engine(1280, 720, "Lunatic Engine");
 
-	auto scene = engine.getScene();
-
-	auto object = std::make_shared<Lunatic::Object>();
-	auto child = std::make_shared<Lunatic::Object>();
-	scene->addObject(object);
-	object->attachChild(child);
+	engine.registerService<Lunatic::Workspace>("Workspace");
+	engine.registerService<Lunatic::LuaManager>("LuaManager");
+	engine.registerService<Lunatic::Physics>("Physics");
 
 	engine.run();
 }

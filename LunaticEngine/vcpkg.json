@@ -8,7 +8,6 @@
     },
     "glfw3",
     "glm",
-    "spdlog",
     {
       "name": "imgui",
       "features": [
@@ -17,6 +16,9 @@
         "glfw-binding",
         "opengl3-binding"
       ]
-    }
+    },
+    "luajit",
+    "spdlog",
+    "sol2"
   ]
 }

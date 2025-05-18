@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -95,7 +95,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)vcpkg_installed\x64-windows-static-md\x64-windows-static-md\include\luajit;$(ProjectDir);$(ProjectDir)include</AdditionalIncludeDirectories>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <LanguageStandard>stdcpp20</LanguageStandard>
@@ -114,7 +114,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)vcpkg_installed\x64-windows-static-md\x64-windows-static-md\include\luajit;$(ProjectDir);$(ProjectDir)include</AdditionalIncludeDirectories>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <LanguageStandard>stdcpp20</LanguageStandard>
@@ -133,7 +133,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)vcpkg_installed\x64-windows-static-md\x64-windows-static-md\include\luajit;$(ProjectDir);$(ProjectDir)include</AdditionalIncludeDirectories>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <LanguageStandard>stdcpp20</LanguageStandard>
@@ -152,7 +152,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)vcpkg_installed\x64-windows-static-md\x64-windows-static-md\include\luajit;$(ProjectDir);$(ProjectDir)include</AdditionalIncludeDirectories>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <LanguageStandard>stdcpp20</LanguageStandard>
@@ -175,17 +175,19 @@
     <ClCompile Include="src\lunatic\buffers.cpp" />
     <ClCompile Include="src\lunatic\camera.cpp" />
     <ClCompile Include="src\lunatic\engine.cpp" />
-    <ClCompile Include="src\lunatic\scene.cpp" />
+    <ClCompile Include="src\lunatic\datamodel.cpp" />
+    <ClCompile Include="src\lunatic\renderer.cpp" />
     <ClCompile Include="src\lunatic\shader.cpp" />
     <ClCompile Include="src\main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\lunatic\buffers.h" />
-    <ClInclude Include="include\lunatic\camera.h" />
-    <ClInclude Include="include\lunatic\engine.h" />
-    <ClInclude Include="include\lunatic\prelude.h" />
-    <ClInclude Include="include\lunatic\scene.h" />
-    <ClInclude Include="include\lunatic\shader.h" />
+    <ClInclude Include="src\lunatic\buffers.h" />
+    <ClInclude Include="src\lunatic\camera.h" />
+    <ClInclude Include="src\lunatic\defs\rendercontext.h" />
+    <ClInclude Include="src\lunatic\engine.h" />
+    <ClInclude Include="src\lunatic\datamodel.h" />
+    <ClInclude Include="src\lunatic\renderer.h" />
+    <ClInclude Include="src\lunatic\shader.h" />
     <ClInclude Include="pch.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

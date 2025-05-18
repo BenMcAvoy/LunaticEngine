@@ -1,8 +1,10 @@
 #include "pch.h"
 
-#include "lunatic/shader.h"
+#include "shader.h"
 
-Lunatic::Shader::Shader(const std::string& vertexPath, const std::string& fragmentPath) {
+using namespace Lunatic;
+
+Shader::Shader(const std::string& vertexPath, const std::string& fragmentPath) {
 	std::string vertexSrc = loadShaderSource(vertexPath);
 	std::string fragmentSrc = loadShaderSource(fragmentPath);
 	unsigned int vertex = compileShader(GL_VERTEX_SHADER, vertexSrc.c_str());
@@ -10,13 +12,13 @@ Lunatic::Shader::Shader(const std::string& vertexPath, const std::string& fragme
 	m_id = createProgram(vertex, fragment);
 }
 
-Lunatic::Shader::Shader() {
+Shader::Shader() {
     unsigned int vertex = compileShader(GL_VERTEX_SHADER, DEFAULT_VERTEX_SRC);
     unsigned int fragment = compileShader(GL_FRAGMENT_SHADER, DEFAULT_FRAGMENT_SRC);
     m_id = createProgram(vertex, fragment);
 }
 
-std::string Lunatic::Shader::loadShaderSource(const std::string& path) const {
+std::string Shader::loadShaderSource(const std::string& path) const {
     std::ifstream file(path);
     if (!file.is_open()) {
         throw std::runtime_error("Shader::loadShaderSource - Failed to open file: " + path);
@@ -27,7 +29,7 @@ std::string Lunatic::Shader::loadShaderSource(const std::string& path) const {
     return buffer.str();
 }
 
-unsigned int Lunatic::Shader::compileShader(unsigned int type, const char* source) const {
+unsigned int Shader::compileShader(unsigned int type, const char* source) const {
     unsigned int shader = glCreateShader(type);
     glShaderSource(shader, 1, &source, nullptr);
     glCompileShader(shader);
@@ -46,7 +48,7 @@ unsigned int Lunatic::Shader::compileShader(unsigned int type, const char* sourc
     return shader;
 }
 
-unsigned int Lunatic::Shader::createProgram(unsigned int vertex, unsigned int fragment) const {
+unsigned int Shader::createProgram(unsigned int vertex, unsigned int fragment) const {
     unsigned int program = glCreateProgram();
     glAttachShader(program, vertex);
     glAttachShader(program, fragment);
@@ -66,49 +68,49 @@ unsigned int Lunatic::Shader::createProgram(unsigned int vertex, unsigned int fr
     return program;
 }
 
-Lunatic::Shader::~Shader() {
+Shader::~Shader() {
   glDeleteProgram(m_id);
 }
 
-void Lunatic::Shader::use() const { glUseProgram(m_id); }
+void Shader::use() const { glUseProgram(m_id); }
 
-void Lunatic::Shader::set(const std::string_view name, float value) const {
+void Shader::set(const std::string_view name, float value) const {
     GLint loc = glGetUniformLocation(m_id, name.data());
     if (loc == -1) throw std::runtime_error("Uniform '" + std::string(name) + "' not found");
     glUniform1f(loc, value);
 }
 
-void Lunatic::Shader::set(const std::string_view name, int value) const {
+void Shader::set(const std::string_view name, int value) const {
     GLint loc = glGetUniformLocation(m_id, name.data());
     if (loc == -1) throw std::runtime_error("Uniform '" + std::string(name) + "' not found");
     glUniform1i(loc, value);
 }
 
-void Lunatic::Shader::set(const std::string_view name, bool value) const {
+void Shader::set(const std::string_view name, bool value) const {
     GLint loc = glGetUniformLocation(m_id, name.data());
     if (loc == -1) throw std::runtime_error("Uniform '" + std::string(name) + "' not found");
     glUniform1i(loc, static_cast<int>(value));
 }
 
-void Lunatic::Shader::set(const std::string_view name, GLfloat* value) const {
+void Shader::set(const std::string_view name, GLfloat* value) const {
     GLint loc = glGetUniformLocation(m_id, name.data());
     if (loc == -1) throw std::runtime_error("Uniform '" + std::string(name) + "' not found");
     glUniformMatrix4fv(loc, 1, GL_FALSE, value);
 }
 
-void Lunatic::Shader::set(const std::string_view name, const glm::mat4& value) const {
+void Shader::set(const std::string_view name, const glm::mat4& value) const {
     GLint loc = glGetUniformLocation(m_id, name.data());
     if (loc == -1) throw std::runtime_error("Uniform '" + std::string(name) + "' not found");
     glUniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(value));
 }
 
-void Lunatic::Shader::set(const std::string_view name, const glm::vec3& value) const {
+void Shader::set(const std::string_view name, const glm::vec3& value) const {
     GLint loc = glGetUniformLocation(m_id, name.data());
     if (loc == -1) throw std::runtime_error("Uniform '" + std::string(name) + "' not found");
     glUniform3fv(loc, 1, glm::value_ptr(value));
 }
 
-void Lunatic::Shader::set(const std::string_view name, float* value, int count) const {
+void Shader::set(const std::string_view name, float* value, int count) const {
     GLint loc = glGetUniformLocation(m_id, name.data());
     if (loc == -1) throw std::runtime_error("Uniform '" + std::string(name) + "' not found");
 

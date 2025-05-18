@@ -4,6 +4,9 @@
 
 #define IMGUI_DEFINE_MATH_OPERATORS
 
+#define SOL_ALL_SAFETIES_ON 1
+#define SOL_LUAJIT 1
+
 #include <GLFW/glfw3.h>
 #include <glad/glad.h>
 
@@ -16,7 +19,11 @@
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
 
+#include <spdlog/sinks/base_sink.h>
 #include <spdlog/spdlog.h>
+
+#include <luajit/lua.hpp>
+#include <sol/sol.hpp>
 
 #include <stdexcept>
 #include <span>

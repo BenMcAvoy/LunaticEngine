@@ -1,0 +1,4 @@
+*.vcxproj
+*.json
+*.sln
+*git*

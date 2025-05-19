@@ -19,6 +19,7 @@
     },
     "luajit",
     "spdlog",
-    "sol2"
+    "sol2",
+    "tinyfiledialogs"
   ]
 }

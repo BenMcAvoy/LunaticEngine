@@ -175,9 +175,10 @@
     <ClCompile Include="src\lunatic\buffers.cpp" />
     <ClCompile Include="src\lunatic\camera.cpp" />
     <ClCompile Include="src\lunatic\engine.cpp" />
-    <ClCompile Include="src\lunatic\datamodel.cpp" />
+    <ClCompile Include="src\lunatic\dd.cpp" />
     <ClCompile Include="src\lunatic\renderer.cpp" />
     <ClCompile Include="src\lunatic\shader.cpp" />
+    <ClCompile Include="src\lunatic\utils.cpp" />
     <ClCompile Include="src\main.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -189,6 +190,7 @@
     <ClInclude Include="src\lunatic\renderer.h" />
     <ClInclude Include="src\lunatic\shader.h" />
     <ClInclude Include="pch.h" />
+    <ClInclude Include="src\lunatic\utils.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

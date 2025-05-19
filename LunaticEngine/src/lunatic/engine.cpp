@@ -229,11 +229,18 @@ void Engine::run() {
 
 		ImGui::Begin("Lunatic services");
 		{
-			if (ImGui::BeginTable("ServicesTable", 3, ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_NoBordersInBody)) {
+			if (ImGui::BeginTable("ServicesTable", 5, ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_NoBordersInBody)) {
+				static std::unordered_map<std::string, bool> autoUpdateMap;
+				static std::unordered_map<std::string, bool> autoRenderMap;
+
 				for (const auto& [name, service] : m_services) {
 					ImGui::PushID(name.data());
 
+					autoUpdateMap.try_emplace(name, false);
+					autoRenderMap.try_emplace(name, false);
+
 					ImGui::TableNextRow();
+
 					ImGui::TableSetColumnIndex(0);
 					ImGui::Text("%s", name.data());
 
@@ -243,6 +250,9 @@ void Engine::run() {
 					}
 
 					ImGui::TableSetColumnIndex(2);
+					ImGui::Checkbox("Auto Update", &autoUpdateMap[name]);
+
+					ImGui::TableSetColumnIndex(3);
 					if (ImGui::Button("Render")) {
 						auto renderableService = std::dynamic_pointer_cast<RenderableService>(service);
 						if (renderableService) {
@@ -256,12 +266,32 @@ void Engine::run() {
 						}
 					}
 
+					ImGui::TableSetColumnIndex(4);
+					ImGui::Checkbox("Auto Render", &autoRenderMap[name]);
+
 					ImGui::PopID();
+
+					if (autoUpdateMap[name]) {
+						service->onUpdate(0.01666f);
+					}
+
+					if (autoRenderMap[name]) {
+						auto renderableService = std::dynamic_pointer_cast<RenderableService>(service);
+						if (renderableService) {
+							RenderContext context;
+							context.camera = nullptr;
+							context.shader = nullptr;
+							renderableService->onRender(context);
+						}
+					}
 				}
 				ImGui::EndTable();
 			}
 		}
 		ImGui::End();
+
+		auto lm = ServiceLocator::Get<LuaManager>("LuaManager");
+		lm->drawImGuiWindow();
 
 #ifdef _DEBUG
 		console.Draw("Console");

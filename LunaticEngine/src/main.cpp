@@ -9,7 +9,7 @@ int main(void) {
 
 	engine.registerService<Lunatic::Workspace>("Workspace");
 	engine.registerService<Lunatic::LuaManager>("LuaManager");
-	engine.registerService<Lunatic::Physics>("Physics");
+	engine.registerService<Lunatic::PhysicsManager>("PhysicsManager");
 
 	engine.run();
 }

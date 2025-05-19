@@ -1,7 +1,7 @@
 #pragma once
 
-#define GLFW_INCLUDE_NONE
 
+#define GLFW_INCLUDE_NONE
 #define IMGUI_DEFINE_MATH_OPERATORS
 
 #define SOL_ALL_SAFETIES_ON 1
@@ -15,6 +15,7 @@
 #include <glm/trigonometric.hpp>
 
 #include <imgui.h>
+#include <imgui_stdlib.h>
 #include <imgui_internal.h>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
@@ -24,6 +25,8 @@
 
 #include <luajit/lua.hpp>
 #include <sol/sol.hpp>
+
+#include <tinyfiledialogs/tinyfiledialogs.h>
 
 #include <stdexcept>
 #include <span>

@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -21,32 +21,32 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{0b2963fe-2590-459e-ad84-43372237b5e7}</ProjectGuid>
-    <RootNamespace>LunaticEngine</RootNamespace>
+    <ProjectGuid>{c9b644e9-5dee-467c-82cb-8bcdfdaeb9d5}</ProjectGuid>
+    <RootNamespace>LunaticRuntime</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -70,24 +70,17 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup Label="Vcpkg">
-    <VcpkgEnableManifest>true</VcpkgEnableManifest>
-  </PropertyGroup>
-  <PropertyGroup Label="Vcpkg" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <VcpkgUseStatic>true</VcpkgUseStatic>
-    <VcpkgUseMD>true</VcpkgUseMD>
-  </PropertyGroup>
   <PropertyGroup Label="Vcpkg" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <VcpkgUseStatic>true</VcpkgUseStatic>
-    <VcpkgUseMD>true</VcpkgUseMD>
   </PropertyGroup>
   <PropertyGroup Label="Vcpkg" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <VcpkgUseStatic>true</VcpkgUseStatic>
-    <VcpkgUseMD>true</VcpkgUseMD>
   </PropertyGroup>
   <PropertyGroup Label="Vcpkg" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <VcpkgUseStatic>true</VcpkgUseStatic>
-    <VcpkgUseMD>true</VcpkgUseMD>
+  </PropertyGroup>
+  <PropertyGroup Label="Vcpkg" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <VcpkgUseStatic>true</VcpkgUseStatic>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -95,15 +88,15 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)vcpkg_installed\x64-windows-static-md\x64-windows-static-md\include\luajit;$(ProjectDir);$(ProjectDir)src</AdditionalIncludeDirectories>
-      <PrecompiledHeader>Use</PrecompiledHeader>
-      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>$(SolutionDir)LunaticEngine\vcpkg_installed\x64-windows-static-md\x64-windows-static-md\include\luajit;$(SolutionDir)LunaticEngine\vcpkg_installed\x64-windows-static-md\x64-windows-static-md\include;$(SolutionDir)LunaticEngine\src</AdditionalIncludeDirectories>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(SolutionDir)LunaticEngine\vcpkg_installed\x64-windows-static-md\x64-windows-static-md\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>brotlicommon.lib;brotlidec.lib;brotlienc.lib;bz2.lib;fmt.lib;freetype.lib;glad.lib;glfw3.lib;glm.lib;imgui.lib;libpng16.lib;lua51.lib;spdlog.lib;tinyfiledialogs.lib;zlib.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -114,10 +107,8 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)vcpkg_installed\x64-windows-static-md\x64-windows-static-md\include\luajit;$(ProjectDir);$(ProjectDir)src</AdditionalIncludeDirectories>
-      <PrecompiledHeader>Use</PrecompiledHeader>
-      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>$(SolutionDir)LunaticEngine\vcpkg_installed\x64-windows-static-md\x64-windows-static-md\include\luajit;$(SolutionDir)LunaticEngine\vcpkg_installed\x64-windows-static-md\x64-windows-static-md\include;$(SolutionDir)LunaticEngine\src</AdditionalIncludeDirectories>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
@@ -125,6 +116,8 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(SolutionDir)LunaticEngine\vcpkg_installed\x64-windows-static-md\x64-windows-static-md\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>brotlicommon.lib;brotlidec.lib;brotlienc.lib;bz2.lib;fmt.lib;freetype.lib;glad.lib;glfw3.lib;glm.lib;imgui.lib;libpng16.lib;lua51.lib;spdlog.lib;tinyfiledialogs.lib;zlib.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -133,15 +126,15 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)vcpkg_installed\x64-windows-static-md\x64-windows-static-md\include\luajit;$(ProjectDir);$(ProjectDir)src</AdditionalIncludeDirectories>
-      <PrecompiledHeader>Use</PrecompiledHeader>
-      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>$(SolutionDir)LunaticEngine\vcpkg_installed\x64-windows-static-md\x64-windows-static-md\include\luajit;$(SolutionDir)LunaticEngine\vcpkg_installed\x64-windows-static-md\x64-windows-static-md\include;$(SolutionDir)LunaticEngine\src</AdditionalIncludeDirectories>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(SolutionDir)LunaticEngine\vcpkg_installed\x64-windows-static-md\x64-windows-static-md\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>brotlicommon.lib;brotlidec.lib;brotlienc.lib;bz2.lib;fmt.lib;freetype.lib;glad.lib;glfw3.lib;glm.lib;imgui.lib;libpng16.lib;lua51.lib;spdlog.lib;tinyfiledialogs.lib;zlib.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -152,10 +145,8 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)vcpkg_installed\x64-windows-static-md\x64-windows-static-md\include\luajit;$(ProjectDir);$(ProjectDir)src</AdditionalIncludeDirectories>
-      <PrecompiledHeader>Use</PrecompiledHeader>
-      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>$(SolutionDir)LunaticEngine\vcpkg_installed\x64-windows-static-md\x64-windows-static-md\include\luajit;$(SolutionDir)LunaticEngine\vcpkg_installed\x64-windows-static-md\x64-windows-static-md\include;$(SolutionDir)LunaticEngine\src</AdditionalIncludeDirectories>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
@@ -163,38 +154,17 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(SolutionDir)LunaticEngine\vcpkg_installed\x64-windows-static-md\x64-windows-static-md\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>brotlicommon.lib;brotlidec.lib;brotlienc.lib;bz2.lib;fmt.lib;freetype.lib;glad.lib;glfw3.lib;glm.lib;imgui.lib;libpng16.lib;lua51.lib;spdlog.lib;tinyfiledialogs.lib;zlib.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\pch.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
-    </ClCompile>
-    <ClCompile Include="src\core\engine.cpp" />
-    <ClCompile Include="src\core\utils.cpp" />
-    <ClCompile Include="src\hierarchy\base.cpp" />
-    <ClCompile Include="src\hierarchy\services\scripting.cpp" />
-    <ClCompile Include="src\hierarchy\services\workspace.cpp" />
-    <ClCompile Include="src\render\buffers.cpp" />
-    <ClCompile Include="src\render\camera.cpp" />
-    <ClCompile Include="src\render\renderer.cpp" />
-    <ClCompile Include="src\render\shader.cpp" />
+    <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\pch.h" />
-    <ClInclude Include="src\core\engine.h" />
-    <ClInclude Include="src\core\utils.h" />
-    <ClInclude Include="src\defs\rendercontext.h" />
-    <ClInclude Include="src\hierarchy\base.h" />
-    <ClInclude Include="src\hierarchy\objects\sprite.h" />
-    <ClInclude Include="src\hierarchy\services\scripting.h" />
-    <ClInclude Include="src\hierarchy\services\workspace.h" />
-    <ClInclude Include="src\render\buffers.h" />
-    <ClInclude Include="src\render\camera.h" />
-    <ClInclude Include="src\render\renderer.h" />
-    <ClInclude Include="src\render\shader.h" />
+    <ProjectReference Include="..\LunaticEngine\LunaticEngine.vcxproj">
+      <Project>{0b2963fe-2590-459e-ad84-43372237b5e7}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

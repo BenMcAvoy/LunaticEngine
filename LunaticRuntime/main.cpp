@@ -1,9 +1,9 @@
-#include "pch.h"
+#include "core/engine.h"
 
-#include "lunatic/engine.h"
+#include "hierarchy/services/workspace.h"
+#include "hierarchy/services/scripting.h"
 
-#include "lunatic/datamodel/services/scripting.h"
-#include "lunatic/datamodel/services/workspace.h"
+#include "spdlog/spdlog.h"
 
 int main(void) {
 	spdlog::set_level(spdlog::level::trace);

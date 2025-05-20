@@ -1,11 +1,13 @@
 #pragma once
 
-
 #define GLFW_INCLUDE_NONE
 #define IMGUI_DEFINE_MATH_OPERATORS
 
 #define SOL_ALL_SAFETIES_ON 1
 #define SOL_LUAJIT 1
+
+#define NOMINMAX
+#define WIN32_LEAN_AND_MEAN
 
 #include <GLFW/glfw3.h>
 #include <glad/glad.h>

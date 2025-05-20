@@ -2,10 +2,10 @@
 
 #include "pch.h"
 
-#include "datamodel/base.h"
-#include "datamodel/services/scripting.h"
+#include "hierarchy/base.h"
+#include "hierarchy/services/scripting.h"
 
-#include "shader.h"
+#include "render/shader.h"
 
 namespace Lunatic {
 #ifdef _DEBUG

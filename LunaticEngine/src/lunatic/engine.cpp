@@ -246,7 +246,7 @@ void Engine::run() {
 
 					ImGui::TableSetColumnIndex(1);
 					if (ImGui::Button("Update")) {
-						service->onUpdate(0.01666f);
+						service->update(0.01666f);
 					}
 
 					ImGui::TableSetColumnIndex(2);
@@ -254,12 +254,9 @@ void Engine::run() {
 
 					ImGui::TableSetColumnIndex(3);
 					if (ImGui::Button("Render")) {
-						auto renderableService = std::dynamic_pointer_cast<RenderableService>(service);
+						auto renderableService = std::dynamic_pointer_cast<IRenderable>(service);
 						if (renderableService) {
-							RenderContext context;
-							context.camera = nullptr;
-							context.shader = nullptr;
-							renderableService->onRender(context);
+							renderableService->render();
 						}
 						else {
 							spdlog::warn("Service {} is not a RenderableService", name);
@@ -272,16 +269,13 @@ void Engine::run() {
 					ImGui::PopID();
 
 					if (autoUpdateMap[name]) {
-						service->onUpdate(0.01666f);
+						service->update(0.01666f);
 					}
 
 					if (autoRenderMap[name]) {
-						auto renderableService = std::dynamic_pointer_cast<RenderableService>(service);
+						auto renderableService = std::dynamic_pointer_cast<IRenderable>(service);
 						if (renderableService) {
-							RenderContext context;
-							context.camera = nullptr;
-							context.shader = nullptr;
-							renderableService->onRender(context);
+							renderableService->render();
 						}
 					}
 				}
@@ -290,7 +284,7 @@ void Engine::run() {
 		}
 		ImGui::End();
 
-		auto lm = ServiceLocator::Get<LuaManager>("LuaManager");
+		auto lm = ServiceLocator::Get<Services::Scripting>("Scripting");
 		lm->drawImGuiWindow();
 
 #ifdef _DEBUG

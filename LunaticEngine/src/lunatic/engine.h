@@ -2,7 +2,9 @@
 
 #include "pch.h"
 
-#include "datamodel.h"
+#include "datamodel/base.h"
+#include "datamodel/services/scripting.h"
+
 #include "shader.h"
 
 namespace Lunatic {

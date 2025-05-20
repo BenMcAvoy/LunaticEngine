@@ -174,8 +174,10 @@
     </ClCompile>
     <ClCompile Include="src\lunatic\buffers.cpp" />
     <ClCompile Include="src\lunatic\camera.cpp" />
+    <ClCompile Include="src\lunatic\datamodel\base.cpp" />
+    <ClCompile Include="src\lunatic\datamodel\services\scripting.cpp" />
+    <ClCompile Include="src\lunatic\datamodel\services\workspace.cpp" />
     <ClCompile Include="src\lunatic\engine.cpp" />
-    <ClCompile Include="src\lunatic\dd.cpp" />
     <ClCompile Include="src\lunatic\renderer.cpp" />
     <ClCompile Include="src\lunatic\shader.cpp" />
     <ClCompile Include="src\lunatic\utils.cpp" />
@@ -184,9 +186,12 @@
   <ItemGroup>
     <ClInclude Include="src\lunatic\buffers.h" />
     <ClInclude Include="src\lunatic\camera.h" />
+    <ClInclude Include="src\lunatic\datamodel\base.h" />
+    <ClInclude Include="src\lunatic\datamodel\objects\sprite.h" />
+    <ClInclude Include="src\lunatic\datamodel\services\scripting.h" />
+    <ClInclude Include="src\lunatic\datamodel\services\workspace.h" />
     <ClInclude Include="src\lunatic\defs\rendercontext.h" />
     <ClInclude Include="src\lunatic\engine.h" />
-    <ClInclude Include="src\lunatic\datamodel.h" />
     <ClInclude Include="src\lunatic\renderer.h" />
     <ClInclude Include="src\lunatic\shader.h" />
     <ClInclude Include="pch.h" />

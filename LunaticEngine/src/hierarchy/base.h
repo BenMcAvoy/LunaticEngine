@@ -5,13 +5,13 @@
 namespace Lunatic {
 	class Instance : public std::enable_shared_from_this<Instance> {
 	protected:
-		std::weak_ptr<Instance> parent;
-		std::vector<std::shared_ptr<Instance>> children;
-
 		std::string name;
 		std::string className;
 
 	public:
+		std::weak_ptr<Instance> parent;
+		std::vector<std::shared_ptr<Instance>> children;
+
 		explicit Instance(std::string_view name = "", std::string_view className = "Instance");
 		virtual ~Instance();
 
@@ -27,6 +27,9 @@ namespace Lunatic {
 		void setName(std::string_view name);
 
 		std::string_view getClassName();
+
+	public:
+		glm::vec2 position{ 0.0f, 0.0f };
 	};
 
 	struct IRenderable {

@@ -166,6 +166,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\hierarchy\services\debug.cpp" />
     <ClCompile Include="src\pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
@@ -179,10 +180,11 @@
     <ClCompile Include="src\hierarchy\services\workspace.cpp" />
     <ClCompile Include="src\render\buffers.cpp" />
     <ClCompile Include="src\render\camera.cpp" />
-    <ClCompile Include="src\render\renderer.cpp" />
+    <ClCompile Include="src\hierarchy\services\renderer.cpp" />
     <ClCompile Include="src\render\shader.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\hierarchy\services\debug.h" />
     <ClInclude Include="src\pch.h" />
     <ClInclude Include="src\core\engine.h" />
     <ClInclude Include="src\core\utils.h" />
@@ -193,8 +195,12 @@
     <ClInclude Include="src\hierarchy\services\workspace.h" />
     <ClInclude Include="src\render\buffers.h" />
     <ClInclude Include="src\render\camera.h" />
-    <ClInclude Include="src\render\renderer.h" />
+    <ClInclude Include="src\hierarchy\services\renderer.h" />
     <ClInclude Include="src\render\shader.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="frag.glsl" />
+    <None Include="vert.glsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

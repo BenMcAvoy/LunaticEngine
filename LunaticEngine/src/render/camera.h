@@ -1,42 +1,40 @@
 #pragma once
 
-#include "shader.h"
-
-#include <glm/fwd.hpp>
-#include <glm/glm.hpp>
-#include <glm/gtc/type_ptr.hpp>
+#include "pch.h"
 
 namespace Lunatic {
 	class Camera {
 	public:
-		Camera();
-		~Camera() = default;
+		Camera(int width = 800, int height = 600);
 
-		void setPosition(const glm::vec3& position);
-		void setRotation(float rotation);
-		void setZoom(float zoom);
+		void setPosition(const glm::vec2& position);
+		void setRotation(float degrees);
+		void setZoom(float zoomLevel); // zoomLevel is pixels per unit
 
-		void translate(const glm::vec3& translation);
-		void rotate(float rotation);
-		void zoomIn(float zoom);
+		void translate(const glm::vec2& delta);
+		void rotate(float deltaDegrees);
+		void zoom(float deltaZoom);
 
 		void resize(int width, int height);
-		void resize(glm::vec2 size);
 
-		void update();
+		void setBackgroundColor(const glm::vec3& color);
+		const glm::vec3& getBackgroundColor() const;
 
-		inline glm::mat4 getVP() const { return projection * view; }
+		glm::mat4 getViewProjection() const;
+		const glm::vec2& getViewportSize() const { return m_viewportSize; }
 
-		glm::vec3 background = glm::vec3(0.15, 0.15, 0.15);
 	private:
-		void recalculateProjection();
+		void updateView();
+		void updateProjection();
 
-		glm::vec2 viewportSize = { 800, 600 };
-		glm::vec3 position = glm::vec3(0, 0, 0);
-		float rotation = 0.0f; // in degrees
-		float zoom = 100.0f;
+		glm::vec2 m_viewportSize;
+		glm::vec2 m_position;
+		float m_rotation = 0.0f; // degrees
+		float m_zoom = 100.0f;
 
-		glm::mat4 projection;
-		glm::mat4 view;
+		glm::vec3 m_backgroundColor = { 0.15f, 0.15f, 0.15f };
+
+		glm::mat4 m_view;
+		glm::mat4 m_projection;
 	};
 } // namespace Lunatic

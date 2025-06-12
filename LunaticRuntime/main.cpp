@@ -2,6 +2,7 @@
 
 #include "hierarchy/services/workspace.h"
 #include "hierarchy/services/scripting.h"
+#include "hierarchy/services/renderer.h"
 
 #include "spdlog/spdlog.h"
 
@@ -12,6 +13,8 @@ int main(void) {
 
 	engine.registerService<Lunatic::Services::Workspace>("Workspace");
 	engine.registerService<Lunatic::Services::Scripting>("Scripting");
+	engine.registerService<Lunatic::Services::Renderer>("Renderer");
+	engine.registerService<Lunatic::Services::Debug>("Debug");
 
 	engine.run();
 }

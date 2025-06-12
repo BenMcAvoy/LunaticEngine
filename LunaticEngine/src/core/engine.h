@@ -3,19 +3,15 @@
 #include "pch.h"
 
 #include "hierarchy/base.h"
+
 #include "hierarchy/services/scripting.h"
+#include "hierarchy/services/workspace.h"
+#include "hierarchy/services/debug.h"
 
 #include "render/shader.h"
 
 namespace Lunatic {
-#ifdef _DEBUG
-	struct LogContainer {
-		std::string message;
-		ImVec4 color;
-	};
-#endif
-
-class Engine {
+	class Engine {
 public:
 	Engine(std::uint32_t width, std::uint32_t height, std::string_view title);
 	~Engine();
@@ -26,7 +22,7 @@ public:
 	}
 
 	void run();
-	void stop() { m_running = false; if (m_window) glfwSetWindowShouldClose(m_window, true); }
+	void stop();
 
 	template <typename T, typename... Args>
 	void registerService(std::string_view name, Args&&... args) {
@@ -46,6 +42,11 @@ public:
 		auto it = m_services.find(name.data());
 		LUN_ASSERT(it != m_services.end(), "Service not found")
 		return std::dynamic_pointer_cast<T>(it->second);
+	}
+
+	// Access to services map for debug purposes
+	const std::unordered_map<std::string, std::shared_ptr<Service>>& getServicesMap() const {
+		return m_services;
 	}
 
 private:

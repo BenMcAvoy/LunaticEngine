@@ -28,8 +28,6 @@
 #include <luajit/lua.hpp>
 #include <sol/sol.hpp>
 
-#include <tinyfiledialogs/tinyfiledialogs.h>
-
 #include <stdexcept>
 #include <span>
 #include <cassert>

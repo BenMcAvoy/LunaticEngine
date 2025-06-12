@@ -5,7 +5,13 @@
 namespace Lunatic::Services {
 	class Workspace : public Service, public IRenderable {
 	public:
-		Workspace() : Service("Workspace") {}
+		Workspace();
+
+		std::vector<std::shared_ptr<Instance>>& getInstances() {
+			return children;
+		}
+
+		void initialize();
 
 		void update(float deltaTime) override;
 		void render() override;

@@ -72,15 +72,22 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Label="Vcpkg" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <VcpkgUseStatic>true</VcpkgUseStatic>
+    <VcpkgUseMD>true</VcpkgUseMD>
   </PropertyGroup>
   <PropertyGroup Label="Vcpkg" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <VcpkgUseStatic>true</VcpkgUseStatic>
+    <VcpkgUseMD>true</VcpkgUseMD>
   </PropertyGroup>
   <PropertyGroup Label="Vcpkg" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <VcpkgUseStatic>true</VcpkgUseStatic>
+    <VcpkgUseMD>true</VcpkgUseMD>
   </PropertyGroup>
   <PropertyGroup Label="Vcpkg" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <VcpkgUseStatic>true</VcpkgUseStatic>
+    <VcpkgUseMD>true</VcpkgUseMD>
+  </PropertyGroup>
+  <PropertyGroup Label="Vcpkg">
+    <VcpkgEnableManifest>true</VcpkgEnableManifest>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -95,8 +102,8 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)LunaticEngine\vcpkg_installed\x64-windows-static-md\x64-windows-static-md\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>brotlicommon.lib;brotlidec.lib;brotlienc.lib;bz2.lib;fmt.lib;freetype.lib;glad.lib;glfw3.lib;glm.lib;imgui.lib;libpng16.lib;lua51.lib;spdlog.lib;tinyfiledialogs.lib;zlib.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)LunaticEngine\vcpkg_installed\x64-windows-static-md\x64-windows-static-md\debug\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>brotlicommon.lib;brotlidec.lib;brotlienc.lib;bz2d.lib;fmtd.lib;freetyped.lib;glad.lib;glfw3.lib;glm.lib;imguid.lib;libpng16d.lib;lua51.lib;spdlogd.lib;zlibd.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -117,7 +124,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(SolutionDir)LunaticEngine\vcpkg_installed\x64-windows-static-md\x64-windows-static-md\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>brotlicommon.lib;brotlidec.lib;brotlienc.lib;bz2.lib;fmt.lib;freetype.lib;glad.lib;glfw3.lib;glm.lib;imgui.lib;libpng16.lib;lua51.lib;spdlog.lib;tinyfiledialogs.lib;zlib.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>brotlicommon.lib;brotlidec.lib;brotlienc.lib;bz2.lib;fmt.lib;freetype.lib;glad.lib;glfw3.lib;glm.lib;imgui.lib;libpng16.lib;lua51.lib;spdlog.lib;zlib.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -133,8 +140,8 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)LunaticEngine\vcpkg_installed\x64-windows-static-md\x64-windows-static-md\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>brotlicommon.lib;brotlidec.lib;brotlienc.lib;bz2.lib;fmt.lib;freetype.lib;glad.lib;glfw3.lib;glm.lib;imgui.lib;libpng16.lib;lua51.lib;spdlog.lib;tinyfiledialogs.lib;zlib.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)LunaticEngine\vcpkg_installed\x64-windows-static-md\x64-windows-static-md\debug\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>brotlicommon.lib;brotlidec.lib;brotlienc.lib;bz2d.lib;fmtd.lib;freetyped.lib;glad.lib;glfw3.lib;glm.lib;imguid.lib;libpng16d.lib;lua51.lib;spdlogd.lib;zlibd.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -155,7 +162,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(SolutionDir)LunaticEngine\vcpkg_installed\x64-windows-static-md\x64-windows-static-md\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>brotlicommon.lib;brotlidec.lib;brotlienc.lib;bz2.lib;fmt.lib;freetype.lib;glad.lib;glfw3.lib;glm.lib;imgui.lib;libpng16.lib;lua51.lib;spdlog.lib;tinyfiledialogs.lib;zlib.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>brotlicommon.lib;brotlidec.lib;brotlienc.lib;bz2.lib;fmt.lib;freetype.lib;glad.lib;glfw3.lib;glm.lib;imgui.lib;libpng16.lib;lua51.lib;spdlog.lib;zlib.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

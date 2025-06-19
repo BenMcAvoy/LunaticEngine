@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "debug.h"
+#include "renderer.h"
 #include "../../core/engine.h"
 #include <spdlog/spdlog.h>
 #include <fmt/format.h>
@@ -105,8 +106,7 @@ void CustomSink::sink_it_(const spdlog::details::log_msg& msg) {
 	console_->AddLog(color, "%s", formattedMessage.c_str());
 }
 
-void CustomSink::flush_() {
-}
+void CustomSink::flush_() { /* No-op for ImGui console */ }
 
 Debug::Debug() : Service("Debug") {
 	// Set up spdlog with our custom sink
@@ -133,6 +133,11 @@ void Debug::render() {
 	if (m_showConsole) {
 		renderConsoleWindow();
 	}
+	
+	if (m_showCamera) {
+		renderCameraWindow();
+	}
+	
 	if (m_showScripting) {
 		static auto scripting = ServiceLocator::Get<Lunatic::Services::Scripting>("Scripting");
 		scripting->drawImGuiWindow();
@@ -142,14 +147,18 @@ void Debug::render() {
 		if (ImGui::BeginMenu("Debug")) {
 			ImGui::MenuItem("Services", nullptr, &m_showServices);
 			ImGui::MenuItem("Console", nullptr, &m_showConsole);
+			ImGui::MenuItem("Camera", nullptr, &m_showCamera);
 			ImGui::MenuItem("Scripting", nullptr, &m_showScripting);
 			ImGui::EndMenu();
 		}
+		ImGui::Text("FPS: %.2f", ImGui::GetIO().Framerate);
 		ImGui::EndMainMenuBar();
 	}
 }
 
 void Debug::renderServicesWindow() {
+	return; // TODO: Review if this is even necessary anymore
+
 	if (!ImGui::Begin("Lunatic Services", &m_showServices)) {
 		ImGui::End();
 		return;
@@ -186,10 +195,7 @@ void Debug::renderServicesWindow() {
 			ImGui::Checkbox("##AutoRender", &m_autoRenderMap[name]);
 
 			if (m_autoRenderMap[name]) {
-				auto renderableService = std::dynamic_pointer_cast<IRenderable>(service);
-				if (renderableService) {
-					renderableService->render();
-				}
+				service->render();
 			}
 
 			ImGui::PopID();
@@ -202,4 +208,59 @@ void Debug::renderServicesWindow() {
 
 void Debug::renderConsoleWindow() {
 	m_console.Draw("Console", &m_showConsole);
+}
+
+void Debug::renderCameraWindow() {
+	if (!ImGui::Begin("Camera Controls", &m_showCamera)) {
+		ImGui::End();
+		return;
+	}
+
+	auto renderer = ServiceLocator::Get<Lunatic::Services::Renderer>("Renderer");
+	if (!renderer) {
+		ImGui::Text("Renderer service not found!");
+		ImGui::End();
+		return;
+	}
+
+	Camera& camera = renderer->getCamera();
+
+	ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "Press F1 lock/unlock mouse");
+	
+	static float fov = 45.0f;
+	static float nearPlane = 0.1f;
+	static float farPlane = 100.0f;
+
+	if (ImGui::SliderFloat("FOV", &fov, 1.0f, 120.0f))
+		camera.setFOV(fov);
+	bool nearFarChanged = false;
+	if (ImGui::DragFloat("Near Plane", &nearPlane, 0.01f, 0.01f, 10.0f))
+		nearFarChanged = true;
+	if (ImGui::DragFloat("Far Plane", &farPlane, 1.0f, 1.0f, 1000.0f))
+		nearFarChanged = true;
+	if (nearFarChanged)
+		camera.setNearFar(nearPlane, farPlane);
+
+	ImGui::SeparatorText("Appearance");
+	glm::vec3 backgroundColor = camera.getBackgroundColor();
+	if (ImGui::ColorEdit3("Background Color", &backgroundColor.x)) {
+		camera.setBackgroundColor(backgroundColor);
+	}
+
+	if (ImGui::CollapsingHeader("Camera Info")) {
+		glm::vec3 position = camera.getPosition();
+		glm::vec3 forward = camera.getForward();
+		glm::vec3 right = camera.getRight();
+		glm::vec3 up = camera.getUp();
+		glm::vec2 viewport = camera.getViewportSize();
+		
+		ImGui::Text("Position: (%.2f, %.2f, %.2f)", position.x, position.y, position.z);
+		ImGui::Text("Forward: (%.2f, %.2f, %.2f)", forward.x, forward.y, forward.z);
+		ImGui::Text("Right: (%.2f, %.2f, %.2f)", right.x, right.y, right.z);
+		ImGui::Text("Up: (%.2f, %.2f, %.2f)", up.x, up.y, up.z);
+		ImGui::Text("Viewport: %.0fx%.0f", viewport.x, viewport.y);
+		ImGui::Text("FOV: %.1f°", fov);
+	}
+
+	ImGui::End();
 }

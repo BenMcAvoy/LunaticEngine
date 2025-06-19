@@ -3,6 +3,8 @@
 #include "renderer.h"
 #include "workspace.h"
 
+#include "core/engine.h"
+
 #ifdef _DEBUG
 #include <spdlog/spdlog.h>
 #include <glad/glad.h>
@@ -42,7 +44,11 @@ Renderer::Renderer() : Service("Renderer") {
     }
 #endif
 
-	m_camera.setZoom(10.0f);
+	// Enable depth testing for 3D rendering
+	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LESS);
+
+	m_camera.setFOV(45.0f);
 	m_buffers.uploadData(std::span<float>(quadVertices.data(), quadVertices.size()),
 		std::span<unsigned int>(quadIndices.data(), quadIndices.size()));
 	m_buffers.bind(); // Ensure VAO is bound before setting attribute
@@ -50,48 +56,126 @@ Renderer::Renderer() : Service("Renderer") {
 }
 
 void Renderer::update(float deltatime) {
-	// Nothing to update for now. (we render only at the moment)
+	updateCameraControls(deltatime);
 }
 
 void Renderer::render() {
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	const auto& bgColor = m_camera.getBackgroundColor();
+	glClearColor(bgColor.r, bgColor.g, bgColor.b, 1.0f);
+
 	m_shader.use();
-
 	m_shader.set("u_viewProjection", m_camera.getViewProjection());
-	m_shader.set("u_colour", glm::vec3(1.0f, 0.0f, 0.0f));
-	m_shader.set("u_model", glm::mat4(1.0f));
-
-	/*m_buffers.bind();
-
-	glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(quadIndices.size()), GL_UNSIGNED_INT, nullptr);*/
-
-	/// ^^^ yap yap yap ^^^
-
 	static auto workspace = ServiceLocator::Get<Services::Workspace>("Workspace");
 	auto instances = workspace->getInstances();
 
-	m_buffers.bind(); // Bind the VAO/VBO/EBO before rendering
-	std::function<void(std::shared_ptr<Instance>, glm::vec3)> renderInstance;
-	renderInstance = [&](std::shared_ptr<Instance> instance, glm::vec3 parentPosition) {
-		glm::mat4 model = glm::mat4(1.0f);
-		glm::vec3 position = glm::vec3(instance->position.x, instance->position.y, 0.0f) + parentPosition;
-		model = glm::translate(model, position);
+	std::function<void(std::shared_ptr<Instance>, glm::mat4)> renderInstance;
+	renderInstance = [&](std::shared_ptr<Instance> instance, glm::mat4 parentTransform) {
+		// Start with the parent's transformation matrix
+		glm::mat4 model = parentTransform;
+		
+		// Apply this instance's local transformations
+		model = glm::translate(model, instance->position);
+		model = glm::rotate(model, glm::radians(instance->rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
+		model = glm::rotate(model, glm::radians(instance->rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
+		model = glm::rotate(model, glm::radians(instance->rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
 
-		// Set values into shader (u_viewProjection is already set)
+		// Set model matrix and color for this instance
 		m_shader.set("u_model", model);
+		m_shader.set("u_color", glm::vec3(1.0f, 0.5f, 0.2f)); // Orange color for cubes
 
-		// Render using glDrawElements
-		glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(quadIndices.size()), GL_UNSIGNED_INT, nullptr);
+		// Call the instance's render method (which will bind its own geometry and draw)
+		instance->render();
 
-		// Render children recursively
+		// Render children recursively, passing the current transformation matrix
 		for (const auto& child : instance->children) {
-			renderInstance(child, position);
+			renderInstance(child, model);
 		}
 		};
 
 	for (const auto& instance : instances)
-		renderInstance(instance, glm::vec3(0.0f));
+		renderInstance(instance, glm::mat4(1.0f));
 }
 
 void Renderer::resize(int width, int height) {
 	m_camera.resize(width, height);
+}
+
+void Renderer::updateCameraControls(float deltaTime) {
+	auto& engine = Engine::GetInstance();
+	
+	// Toggle camera controls with F1
+	static bool f1Pressed = false;
+	if (engine.isKeyPressed(GLFW_KEY_F1)) {
+		if (!f1Pressed) {
+			m_cameraControlEnabled = !m_cameraControlEnabled;
+			m_firstMouse = true; // Reset mouse on toggle
+			
+			// Set cursor mode based on camera control state
+			GLFWwindow* window = glfwGetCurrentContext();
+			if (m_cameraControlEnabled) {
+				glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+			} else {
+				glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+			}
+		}
+		f1Pressed = true;
+	} else {
+		f1Pressed = false;
+	}
+	
+	if (!m_cameraControlEnabled || !engine.isWindowFocused()) {
+		return;
+	}
+	
+	// WASD movement
+	glm::vec3 movement(0.0f);
+	float speed = m_cameraSpeed * deltaTime;
+	
+	if (engine.isKeyPressed(GLFW_KEY_W)) {
+		movement += m_camera.getForward() * speed;
+	}
+	if (engine.isKeyPressed(GLFW_KEY_S)) {
+		movement -= m_camera.getForward() * speed;
+	}
+	if (engine.isKeyPressed(GLFW_KEY_A)) {
+		movement -= m_camera.getRight() * speed;
+	}
+	if (engine.isKeyPressed(GLFW_KEY_D)) {
+		movement += m_camera.getRight() * speed;
+	}
+	if (engine.isKeyPressed(GLFW_KEY_SPACE)) {
+		movement += m_camera.getUp() * speed;
+	}
+	if (engine.isKeyPressed(GLFW_KEY_LEFT_SHIFT)) {
+		movement -= m_camera.getUp() * speed;
+	}
+	
+	// Apply movement
+	if (glm::length(movement) > 0.0f) {
+		m_camera.translate(movement);
+	}
+	
+	// Mouse look
+	glm::vec2 mousePos = engine.getMousePosition();
+	
+	if (m_firstMouse) {
+		m_lastMousePos = mousePos;
+		m_firstMouse = false;
+	}
+	
+	glm::vec2 mouseDelta = mousePos - m_lastMousePos;
+	m_lastMousePos = mousePos;
+	
+	// Apply mouse sensitivity
+	mouseDelta *= m_mouseSensitivity;
+	
+	m_yaw += mouseDelta.x;
+	m_pitch -= mouseDelta.y; // Inverted Y-axis
+	
+	// Constrain pitch
+	m_pitch = glm::clamp(m_pitch, -89.0f, 89.0f);
+	
+	// Update camera rotation
+	m_camera.setRotation(m_pitch, m_yaw, 0.0f);
 }

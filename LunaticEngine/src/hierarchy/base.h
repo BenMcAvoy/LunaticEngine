@@ -28,12 +28,11 @@ namespace Lunatic {
 
 		std::string_view getClassName();
 
-	public:
-		glm::vec2 position{ 0.0f, 0.0f };
-	};
+		virtual void render() { /* No-op by default */ }
 
-	struct IRenderable {
-		virtual void render() = 0;
+	public:
+		glm::vec3 position{ 0.0f, 0.0f, 0.0f };
+		glm::vec3 rotation{ 0.0f, 0.0f, 0.0f };
 	};
 
 	class InstanceRegistry {

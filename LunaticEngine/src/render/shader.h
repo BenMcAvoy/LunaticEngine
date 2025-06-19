@@ -7,26 +7,44 @@ namespace Lunatic {
 	constexpr const char* DEFAULT_VERTEX_SRC = R"(
 #version 460 core
 
-layout(location = 0) in vec3 aPos;
+layout(location = 0) in vec3 position;
+layout(location = 1) in vec3 normal;
+layout(location = 2) in vec2 texCoord;
 
-uniform mat4 u_model;
+out vec3 fragNormal;
+//out vec2 fragTexCoord;
+
 uniform mat4 u_viewProjection;
+uniform mat4 u_model;
 
 void main() {
-  gl_Position = u_viewProjection * u_model * vec4(aPos, 1.0);
+	gl_Position = u_viewProjection * u_model * vec4(position, 1.0);
+	
+	// Transform normal to world space
+	fragNormal = mat3(u_model) * normal;
+	
+	//fragTexCoord = texCoord;
 }
 )";
 
 constexpr const char* DEFAULT_FRAGMENT_SRC = R"(
-  #version 460 core
+#version 460 core
 
-  out vec4 FragColor;
+in vec3 fragNormal;
+//in vec2 fragTexCoord;
 
-  uniform vec3 u_colour;
+out vec3 FragColor;
 
-  void main() {
-    FragColor = vec4(u_colour, 1.0);
-  }
+uniform vec3 u_color;
+
+void main() {
+	vec3 lightDir = normalize(vec3(0.5, 1.0, 0.3)); // Fake light direction
+	float ambient = 0.3;
+	float lightIntensity = 1.0;
+	float directional = max(dot(fragNormal, lightDir), 0.0) * 0.7;
+	float lighting = ambient + directional;
+	FragColor = u_color * lighting;
+}
 )";
 
 // Shader class, helps to load and manage shaders

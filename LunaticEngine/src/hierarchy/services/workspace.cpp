@@ -1,7 +1,7 @@
 #include "pch.h"
 
 #include "workspace.h"
-#include "../objects/sprite.h"
+#include "hierarchy/objects/cube.h"
 
 using namespace Lunatic::Services;
 
@@ -12,23 +12,31 @@ Workspace::Workspace() : Service("Workspace") {
 void Workspace::initialize() {
 	// Create some example entities and show some hierarchy stuff ig
 
-	auto sprite1 = std::make_shared<Sprite>("Sprite1");
-	auto sprite2 = std::make_shared<Sprite>("Sprite2");
-	auto sprite3 = std::make_shared<Sprite>("Sprite3");
+	auto cube1 = std::make_shared<Cube>("Cube1");
+	auto cube2 = std::make_shared<Cube>("Cube2");
+	auto cube3 = std::make_shared<Cube>("Cube3");
 
-	// Make sprite2 a child of sprite1
-	sprite1->addChild(sprite2);
+	// Set different 3D positions to test depth
+	cube1->position = glm::vec3(-2.0f, 0.0f, 0.0f);
+	cube2->position = glm::vec3(0.0f, 0.0f, -2.0f);  // Behind cube1
+	cube3->position = glm::vec3(2.0f, 1.0f, -1.0f);  // To the right and slightly back
 
-	// Add sprite1 and sprite3 to the workspace (root)
-	this->addChild(sprite1);
-	this->addChild(sprite3);
+	// Make cube2 a child of cube1
+	cube1->addChild(cube2);
+
+	// Add cube1 and cube3 to the workspace (root)
+	this->addChild(cube1);
+	this->addChild(cube3);
 }
 
 void Workspace::update(float deltaTime) {
 }
 
 void Workspace::render() {
-    // Render a Dear ImGui window showing the workspace hierarchy as a tree
+    // Workspace only handles UI rendering - the actual 3D scene rendering 
+    // is handled by the Renderer service to avoid conflicts
+    
+    // Render the Dear ImGui workspace explorer window
     if (ImGui::Begin("Workspace Explorer")) {
         // Split window into two columns: tree view and properties
         if (ImGui::BeginTable("WorkspaceLayout", 2, ImGuiTableFlags_Resizable | ImGuiTableFlags_BordersInnerV)) {
@@ -82,16 +90,14 @@ void Workspace::render() {
                 ImGui::Text("Name: %s", selectedInstance->getName().data());
                 ImGui::Text("Class: %s", selectedInstance->getClassName().data());
                 
-                // Show position with editable fields
                 ImGui::Text("Position:");
                 ImGui::SameLine();
-                float pos[2] = { selectedInstance->position.x, selectedInstance->position.y };
-                if (ImGui::DragFloat2("##Position", pos, 0.1f)) {
-                    selectedInstance->position.x = pos[0];
-                    selectedInstance->position.y = pos[1];
-                }
+				ImGui::DragFloat3("##Position", &selectedInstance->position.x, 0.1f, -100.0f, 100.0f, "%.1f");
                 
-                // Show parent info
+                ImGui::Text("Rotation:");
+                ImGui::SameLine();
+				ImGui::DragFloat3("##Rotation", &selectedInstance->rotation.x, 0.1f, 0.0f, 360.0f, "%.1f");
+                
                 auto parent = selectedInstance->getParent();
                 if (parent) {
                     ImGui::Text("Parent: %s", parent->getName().data());
@@ -99,10 +105,8 @@ void Workspace::render() {
                     ImGui::Text("Parent: None (Root)");
                 }
                 
-                // Show children count
                 ImGui::Text("Children: %zu", selectedInstance->children.size());
                 
-                // List children
                 if (!selectedInstance->children.empty()) {
                     ImGui::Text("Child List:");
                     ImGui::Indent();
@@ -111,11 +115,6 @@ void Workspace::render() {
                     }
                     ImGui::Unindent();
                 }
-                
-                // Show if it's renderable
-                auto renderable = std::dynamic_pointer_cast<IRenderable>(selectedInstance);
-                ImGui::Text("Renderable: %s", renderable ? "Yes" : "No");
-                
             } else {
                 ImGui::Text("Select an instance to view properties");
             }

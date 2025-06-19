@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../base.h"
+#include "../../render/camera.h"
 #include <spdlog/sinks/base_sink.h>
 #include <spdlog/details/log_msg.h>
 #include <imgui.h>
@@ -38,7 +39,7 @@ namespace Lunatic::Services {
 		ImGuiConsole* console_;
 	};
 
-	class Debug : public Service, public IRenderable {
+	class Debug : public Service {
 	public:
 		Debug();
 
@@ -47,10 +48,10 @@ namespace Lunatic::Services {
 
 		// Console access
 		ImGuiConsole& getConsole() { return m_console; }
-
 	private:
 		void renderServicesWindow();
 		void renderConsoleWindow();
+		void renderCameraWindow();
 
 		ImGuiConsole m_console;
 		std::shared_ptr<CustomSink> m_customSink;
@@ -60,8 +61,9 @@ namespace Lunatic::Services {
 		std::unordered_map<std::string, bool> m_autoRenderMap;
 		
 		// Window visibility flags
-		bool m_showServices = true;
+		bool m_showServices = false;
 		bool m_showConsole = true;
-		bool m_showScripting = true;
+		bool m_showScripting = false;
+		bool m_showCamera = false;
 	};
 } // namespace Lunatic::Services

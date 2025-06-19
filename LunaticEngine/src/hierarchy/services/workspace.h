@@ -3,7 +3,7 @@
 #include "../base.h"
 
 namespace Lunatic::Services {
-	class Workspace : public Service, public IRenderable {
+	class Workspace : public Service {
 	public:
 		Workspace();
 

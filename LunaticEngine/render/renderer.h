@@ -1,0 +1,32 @@
+#pragma once
+
+#include "pch.h"
+
+#include "render/camera.h"
+#include "render/shader.h"
+
+namespace Lunatic {
+	class Renderable;
+
+	struct RenderState {
+		Camera camera;
+		Shader defaultShader;
+	};
+
+	class Renderer {
+	public:
+		Renderer() = default;
+		~Renderer() = default;
+
+		void render(const std::vector<Renderable*>&);
+		void resize(int width, int height);
+
+		//void registerRenderable(Renderable* renderable);
+		//void unregisterRenderable(Renderable* renderable);
+
+		//std::vector<Renderable*>& getRenderables();
+
+	private:
+		std::shared_ptr<RenderState> state_ = nullptr;
+	};
+} // namespace Lunatic

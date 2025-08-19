@@ -1,0 +1,23 @@
+{
+  "dependencies": [
+    {
+      "name": "glad",
+      "features": [
+        "gl-api-latest"
+      ]
+    },
+    "glfw3",
+    "glm",
+    {
+      "name": "imgui",
+      "features": [
+        "docking-experimental",
+        "freetype",
+        "glfw-binding",
+        "opengl3-binding"
+      ]
+    },
+    "sol2",
+    "luajit"
+  ]
+}

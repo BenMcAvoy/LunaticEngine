@@ -19,6 +19,9 @@ namespace Lunatic {
 		Renderer() = default;
 		~Renderer() = default;
 
+		void registerMainCamera(Camera* camera);
+		Camera* getMainCamera() const { return mainCamera_; }
+
 		void render(const std::vector<Renderable*>&);
 		void resize(int width, int height);
 
@@ -29,5 +32,6 @@ namespace Lunatic {
 
 	private:
 		std::shared_ptr<RenderState> state_ = nullptr;
+		Camera* mainCamera_ = nullptr;
 	};
 } // namespace Lunatic

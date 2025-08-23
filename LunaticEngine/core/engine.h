@@ -42,16 +42,18 @@ namespace Lunatic {
 		MouseButtonAction getMouseButtonState(int button);
 		double getMouseX() const;
 		double getMouseY() const;
+		glm::vec2 getMousePos() const;
 		double getMouseDeltaX();
 		double getMouseDeltaY();
 		double getScrollDeltaX();
 		double getScrollDeltaY();
 
+		void drawText(glm::vec2 position, const std::string& text, glm::vec4 colour);
+
 		// Resizes the window and updates the camera viewport
 		void resize(int width, int height);
 
-		// TODO: Make private
-		std::shared_ptr<Instance> rootInstance = std::make_shared<Instance>("Root");
+		std::shared_ptr<Instance> rootInstance = nullptr;
 
 		void registerRenderable(Renderable* renderable);
 		void unregisterRenderable(Renderable* renderable);
@@ -64,8 +66,6 @@ namespace Lunatic {
 	private:
 		std::vector<Renderable*> renderables_;
 		std::vector<Updateable*> updateables_;
-
-		Camera* mainCamera_ = nullptr;
 
 		LuaMan luaManager_;
 		Renderer renderer_;

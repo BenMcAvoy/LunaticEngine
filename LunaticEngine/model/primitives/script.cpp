@@ -4,14 +4,21 @@
 
 #include "model/reflection.h"
 
+#include "core/engine.h"
+
 using namespace Lunatic;
 
 Script::Script(const std::string& name) : Instance(name), Updateable() {
 	metaType = entt::resolve<Script>();
 }
 
+//#define REFLECTION_DBG
+
 entt::meta_any luaToENTT(sol::object obj) {
     auto type = obj.get_type();
+#ifdef REFLECTION_DBG
+    std::println("[reflec] luaToENTT({})", (int)type);
+#endif
     switch (type) {
         case sol::type::number:
             return entt::meta_any(obj.as<double>());
@@ -21,6 +28,8 @@ entt::meta_any luaToENTT(sol::object obj) {
             return entt::meta_any(obj.as<bool>());
         case sol::type::table: {
 			auto table = obj.as<sol::table>();
+			std::println("[reflection] luaToENTT: converting table of size {}", table.size());
+
 			// if there are 2 paramers, assume glm::vec2
             if (table.size() == 2) {
                 glm::vec2 v;
@@ -36,6 +45,33 @@ entt::meta_any luaToENTT(sol::object obj) {
             return entt::meta_any(obj.as<sol::table>());
         }
         default: {
+            if (type == sol::type::userdata) {
+                if (obj.is<glm::vec2>()) {
+                    glm::vec2 vec2 = obj.as<glm::vec2>();
+                    return entt::meta_any(vec2);
+				}
+				else if (obj.is<glm::vec4>()) {
+					glm::vec4 vec4 = obj.as<glm::vec4>();
+					return entt::meta_any(vec4);
+				}
+				else if (obj.is<std::shared_ptr<Instance>>()) {
+					auto instancePtr = obj.as<std::shared_ptr<Instance>>();
+					return entt::meta_any(instancePtr);
+				}
+				else if (obj.is<std::shared_ptr<Script>>()) {
+					auto scriptPtr = obj.as<std::shared_ptr<Script>>();
+					return entt::meta_any(scriptPtr);
+				}
+				else if (obj.is<std::shared_ptr<Sprite>>()) {
+					auto spritePtr = obj.as<std::shared_ptr<Sprite>>();
+					return entt::meta_any(spritePtr);
+				}
+				else if (obj.is<std::shared_ptr<Camera>>()) {
+					auto cameraPtr = obj.as<std::shared_ptr<Camera>>();
+					return entt::meta_any(cameraPtr);
+				}
+			}
+
 			std::println("[reflection] luaToENTT: unsupported type for conversion. type = {}", (int)type);
             return entt::meta_any();
         }
@@ -44,7 +80,7 @@ entt::meta_any luaToENTT(sol::object obj) {
 
 sol::object enttToLua(sol::state_view ts, const entt::meta_any& any) {
     if (!any) {
-	    std::println("[reflection] enttToLua: any is null");
+		std::println("[reflection] enttToLua: any is null, either void or failed call (likely failed call)");
         return sol::make_object(ts, sol::nil);
     }
 
@@ -69,14 +105,22 @@ sol::object enttToLua(sol::state_view ts, const entt::meta_any& any) {
 		return sol::make_object(ts, sp);
     }
     else if (any.type().info().name() == entt::resolve<glm::vec2>().info().name()) {
-        auto v = any.cast<glm::vec2>();
-        sol::table tbl = ts.create_table();
-        tbl["x"] = v.x;
-        tbl["y"] = v.y;
-        return sol::make_object(ts, tbl);
+		return sol::make_object(ts, any.cast<glm::vec2>());
 	}
+    else if (any.type().info().name() == entt::resolve<glm::vec4>().info().name()) {
+        return sol::make_object(ts, any.cast<glm::vec4>());
+    }
     else if (any.type() == entt::resolve<void>()) {
         return sol::make_object(ts, sol::nil);
+	}
+    // std::vector support (especially for std::vector<std::shared_ptr<Instance>>)
+    else if (any.type().info().name() == entt::resolve<std::vector<std::shared_ptr<Instance>>>().info().name()) {
+        auto vec = any.cast<std::vector<std::shared_ptr<Instance>>>();
+        sol::table tbl = ts.create_table(static_cast<int>(vec.size()), 0);
+        for (size_t i = 0; i < vec.size(); ++i) {
+            tbl[i + 1] = vec[i]; // Lua is 1-indexed
+        }
+        return tbl;
 	}
     else {
 		std::println("[reflection] enttToLua: unsupported type for conversion. type = {}", any.type().info().name());
@@ -94,7 +138,6 @@ entt::meta_any callMethod(std::shared_ptr<Instance> instance, std::string_view m
         return {};
     }
 
-	// reinterpret_cast instead of static_cast to avoid checks
 	T& tRef = *reinterpret_cast<T*>(instance.get());
 
 	entt::meta_any result;
@@ -111,9 +154,13 @@ entt::meta_any callMethod(std::shared_ptr<Instance> instance, std::string_view m
 }
 
 void Script::loadCode(std::string_view code) {
+    coroutine_ = sol::coroutine();
+    env_ = sol::environment();
+    finished_ = false;
+
     if (!luaInit_) {
         lua_.open_libraries(sol::lib::base, sol::lib::package, sol::lib::string,
-            sol::lib::math, sol::lib::table);
+			sol::lib::math, sol::lib::table, sol::lib::coroutine, sol::lib::os);
 
         lua_.set_function("print", [](const std::string& msg) {
             std::println("Lua: {}", msg);
@@ -126,6 +173,8 @@ void Script::loadCode(std::string_view code) {
             auto thunk = [ss, key](sol::variadic_args sVA) -> sol::object {
                 static auto scriptMetaType = entt::resolve<Script>();
                 static auto spriteMetaType = entt::resolve<Sprite>();
+				static auto cameraMetaType = entt::resolve<Camera>();
+				static auto instanceMetaType = entt::resolve<Instance>();
 
 				std::vector<entt::meta_any> args;
 				auto begin = sVA.begin();
@@ -134,14 +183,24 @@ void Script::loadCode(std::string_view code) {
 					args.push_back(luaToENTT(*it));
 				}
 
-                if (ss->metaType == scriptMetaType) {
+                if (ss->metaType == instanceMetaType) {
+                    auto res = callMethod<Instance>(ss, key, args);
+                    return enttToLua(sVA.lua_state(), res);
+                }
+                else if (ss->metaType == scriptMetaType) {
 					auto res = callMethod<Script>(ss, key, args);
 					return enttToLua(sVA.lua_state(), res);
                 }
                 else if (ss->metaType == spriteMetaType) {
 					auto res = callMethod<Sprite>(ss, key, args);
 					return enttToLua(sVA.lua_state(), res);
+				}
+				else if (ss->metaType == cameraMetaType) {
+					auto res = callMethod<Camera>(ss, key, args);
+					return enttToLua(sVA.lua_state(), res);
                 }
+
+				//std::println("[reflection] Unimplemented cast to type {} (was looking for method '{}')", ss->metaType.info().name(), key);
                 return sol::nil;
                 };
             return sol::make_object(ts, thunk);
@@ -150,6 +209,35 @@ void Script::loadCode(std::string_view code) {
         lua_.new_usertype<Instance>("Instance",
             sol::meta_function::index, indexFunc
         );
+
+        // Bind Engine type (directly, no meta)
+        lua_.new_usertype<Engine>("Engine",
+            "getInstance", &Engine::getInstance,
+            "getMouseX", &Engine::getMouseX,
+            "getMouseY", &Engine::getMouseY,
+			"getMousePos", &Engine::getMousePos,
+			"getMouseButtonState", &Engine::getMouseButtonState,
+			"getKeyState", &Engine::getKeyState,
+			"drawText", &Engine::drawText
+		);
+
+        // glm::vec2 binding
+        lua_.new_usertype<glm::vec2>("vec2",
+            sol::constructors<glm::vec2(), glm::vec2(float, float)>(),
+            "x", &glm::vec2::x,
+            "y", &glm::vec2::y
+		);
+
+        // glm::vec4 binding
+        lua_.new_usertype<glm::vec4>("vec4",
+            sol::constructors<glm::vec4(), glm::vec4(float, float, float, float)>(),
+            "x", &glm::vec4::x,
+            "y", &glm::vec4::y,
+            "z", &glm::vec4::z,
+            "w", &glm::vec4::w
+        );
+
+		lua_["yield"] = lua_["coroutine"]["yield"];
 
         luaInit_ = true;
     }
@@ -178,6 +266,8 @@ void Script::loadCode(std::string_view code) {
     coroutine_ = sol::coroutine(cofn);
 
     code_ = std::string(code);
+
+    finished_ = false;
 }
 
 void Script::update() {
@@ -187,6 +277,13 @@ void Script::update() {
 
 	std::shared_ptr<Instance> sharedPtr = shared_from_this();
 	env_["script"] = sharedPtr;
+
+	//env_["engine"] = &Engine::getInstance();
+	//env_["root"] = Engine::getInstance().getRootInstance();
+
+	static auto& engine = Engine::getInstance();
+	env_["engine"] = &engine;
+	env_["root"] = engine.rootInstance;
 
 	sol::protected_function_result result = coroutine_();
 

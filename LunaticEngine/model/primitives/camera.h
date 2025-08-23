@@ -13,6 +13,14 @@ namespace Lunatic {
 		~Camera() = default;
 
 		void use(Shader& shader);
+		void resize(int width, int height);
+
+		glm::vec2 screenToWorld(const glm::vec2& screenPos);
+		glm::vec2 worldToScreen(const glm::vec2& worldPos);
+
+		virtual std::string getClassName() const override {
+			return "Camera";
+		}
 
 	private:
 		void draw() override { /* No-op */ }

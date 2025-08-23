@@ -22,6 +22,12 @@ namespace Lunatic {
 		void setParent(std::shared_ptr<Instance> parent);
 
 		const std::vector<std::shared_ptr<Instance>>& getChildren() const;
+		std::shared_ptr<Instance> findChildByName(std::string name) const;
+
+		bool isA(const std::string& className) const {
+			auto type = entt::resolve(entt::hashed_string{ className.data() });
+			return type == metaType;
+		}
 
 		virtual std::string getClassName() const;
 		virtual void onAncestorChanged() { /* No-op by default, not always needed */ }
@@ -32,11 +38,16 @@ namespace Lunatic {
 		void setPosition(const glm::vec2& pos) { position = pos; }
 		const glm::vec2& getPosition() const { return position; }
 
+		void setScale(const glm::vec2& scl) { scale = scl; }
+		const glm::vec2& getScale() const { return scale; }
+
 		void setColor(const glm::vec4& col) { color = col; }
 		const glm::vec4& getColor() const { return color; }
 
 		glm::vec2 position = { 0.0f, 0.0f };
+		glm::vec2 scale = { 1.0f, 1.0f };
 		glm::vec4 color = { 1.0f, 1.0f, 1.0f, 1.0f }; // Default color is white
+		float rotation = 0.0f; // In degrees
 
 	public:
 		Renderable(); // Registers the Renderable* to the renderer

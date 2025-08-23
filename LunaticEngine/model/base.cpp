@@ -43,6 +43,15 @@ const std::vector<std::shared_ptr<Instance>>& Instance::getChildren() const {
 	return children_;
 }
 
+std::shared_ptr<Instance> Instance::findChildByName(std::string name) const {
+	for (const auto& child : children_) {
+		if (child->getName() == name) {
+			return child;
+		}
+	}
+	return nullptr;
+}
+
 std::string Instance::getClassName() const {
 	return "Instance";
 }

@@ -12,25 +12,74 @@ Engine& Engine::getInstance() {
 	return instance;
 }
 
-void renderFrameTimePlot(float dt) {
-    // Keep last 120 frame times (~2 seconds at 60fps)
-    static constexpr int MAX_FRAMES = 120;
-    static std::array<float, MAX_FRAMES> frameTimes{};
-    static int index = 0;
+template <size_t MAX_FRAMES>
+struct StatBuffer {
+    std::array<float, MAX_FRAMES> values{};
+    int index = 0;
 
-    // Store the latest frame time in milliseconds
-    frameTimes[index] = dt * 1000.0f;
-    index = (index + 1) % MAX_FRAMES;
+    void add(float v) {
+        values[index] = v;
+        index = (index + 1) % MAX_FRAMES;
+    }
+
+    const float* data() const { return values.data(); }
+    int offset() const { return index; }
+    int size() const { return MAX_FRAMES; }
+};
+
+void renderStats(float dt, int renderableCount) {
+    static constexpr int MAX_FRAMES = 240; // ~4 seconds at 60fps
+    static StatBuffer<MAX_FRAMES> frameTimes;
+    static StatBuffer<MAX_FRAMES> fpsValues;
+    static StatBuffer<MAX_FRAMES> renderableCounts;
+
+    // Frame timing
+    float frameTimeMs = dt * 1000.0f;
+    float fps = (dt > 0.0f) ? 1.0f / dt : 0.0f;
+
+    // Record values
+    frameTimes.add(frameTimeMs);
+    fpsValues.add(fps);
+    renderableCounts.add((float)renderableCount);
+
+    // Window
+    ImGui::Begin("Performance Stats");
+
     ImGui::PlotLines(
-        "Frame Time (ms)", 
-        frameTimes.data(), 
-        MAX_FRAMES, 
-        index,
-        nullptr,
-        0.0f,
-        50.0f,
-        ImVec2(0, 80)
+        "Frame Time", frameTimes.data(), frameTimes.size(),
+        frameTimes.offset(), nullptr,
+        0.0f, 50.0f, ImVec2(0, 80)
     );
+
+    // FPS
+    ImGui::PlotLines(
+        "Frames Per Second", fpsValues.data(), fpsValues.size(),
+        fpsValues.offset(), nullptr,
+        0.0f, 120.0f, ImVec2(0, 80)
+    );
+
+    // Entity Count
+    ImGui::PlotLines(
+        "Renderable Count", renderableCounts.data(), renderableCounts.size(),
+        renderableCounts.offset(), nullptr,
+        0.0f, 5000.0f, ImVec2(0, 80)
+    );
+
+    // Some live numbers
+    ImGui::Separator();
+    ImGui::Text("Current Frame Time: %.2f ms", frameTimeMs);
+    ImGui::Text("Current FPS: %.1f", fps);
+	ImGui::Text("Instance Count: %d", renderableCount);
+
+	ImGui::Separator();
+
+	// Manipulation of hierarchy stuff
+	if (ImGui::Button("New Instance")) {
+		auto newInstance = std::make_shared<Instance>("New Instance");
+		newInstance->setParent(Engine::getInstance().rootInstance);
+	}
+
+    ImGui::End();
 }
 
 Engine::Engine() {
@@ -85,6 +134,7 @@ Engine::Engine() {
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO(); (void)io;
+	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;         // Enable Docking
 	ImGui::StyleColorsDark();
 
 	if (std::filesystem::exists("C:\\Windows\\Fonts\\Arial.ttf")) {
@@ -101,6 +151,8 @@ Engine::Engine() {
 
 	std::println("Lunatic Engine initialized successfully");
     initReflection();
+
+	rootInstance = std::make_shared<Instance>("Root");
 }
 
 void Engine::run() {
@@ -108,7 +160,7 @@ void Engine::run() {
 		// Poll events first so callbacks update input state before we render the frame
 		glfwPollEvents();
 
-		glClearColor(0.45f, 0.55f, 0.60f, 1.00f);
+		glClearColor(0.1f, 0.1f, 0.125f, 1.00f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		ImGui_ImplOpenGL3_NewFrame();
@@ -260,17 +312,34 @@ void Engine::run() {
 		}
 			ImGui::End();
 
-		// Show FPS
-		ImGui::Begin("FPS");
-		ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
-		ImGui::Text("Frame Time: %.3f ms", ImGui::GetIO().DeltaTime * 1000.0f);
-		renderFrameTimePlot(ImGui::GetIO().DeltaTime);
-		ImGui::End();
+		renderStats(ImGui::GetIO().DeltaTime, static_cast<int>(renderables_.size()));
 
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 		glfwSwapBuffers(glfwWindow_);
 	}
+}
+
+// uses imgui fg draw list
+void Engine::drawText(glm::vec2 position, const std::string& text, glm::vec4 color) {
+	glm::vec2 screenPos = renderer_.getMainCamera()->worldToScreen(position);
+
+	// Calculate text size to center it
+	ImVec2 textSize = ImGui::CalcTextSize(text.c_str());
+	ImVec2 textPos = ImVec2(screenPos.x - textSize.x * 0.5f, screenPos.y - textSize.y * 0.5f);
+	ImGui::GetForegroundDrawList()->AddText(
+		textPos,
+		ImColor(color.r, color.g, color.b, color.a),
+		text.c_str()
+	);
+
+	/*
+	ImGui::GetForegroundDrawList()->AddText(
+		ImVec2(screenPos.x, screenPos.y),
+		ImColor(color.r, color.g, color.b, color.a),
+		text.c_str()
+	);
+	*/
 }
 
 void Engine::resize(int width, int height) {
@@ -507,6 +576,12 @@ MouseButtonAction Engine::getMouseButtonState(int button) {
 
 double Engine::getMouseX() const { return mouseX_; }
 double Engine::getMouseY() const { return mouseY_; }
+glm::vec2 Engine::getMousePos() const {
+	float x = static_cast<float>(mouseX_);
+	float y = static_cast<float>(mouseY_);
+
+	return { x, y };
+}
 
 double Engine::getMouseDeltaX() {
 	double d = mouseDeltaX_;
@@ -580,5 +655,5 @@ void Engine::unregisterUpdateable(Updateable* updateable) {
 }
 
 void Engine::registerMainCamera(Camera* camera) {
-	mainCamera_ = camera;
+	renderer_.registerMainCamera(camera);
 }

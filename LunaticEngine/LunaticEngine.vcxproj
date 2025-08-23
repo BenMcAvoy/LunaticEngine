@@ -162,6 +162,7 @@
     <ClInclude Include="core\lua.h" />
     <ClInclude Include="core\luaman.h" />
     <ClInclude Include="model\primitives\camera.h" />
+    <ClInclude Include="model\primitives\nativescript.h" />
     <ClInclude Include="model\reflection.h" />
     <ClInclude Include="model\base.h" />
     <ClInclude Include="model\primitives\script.h" />
@@ -176,6 +177,7 @@
     <ClCompile Include="core\engine.cpp" />
     <ClCompile Include="core\luaman.cpp" />
     <ClCompile Include="model\primitives\camera.cpp" />
+    <ClCompile Include="model\primitives\nativescript.cpp" />
     <ClCompile Include="model\reflection.cpp" />
     <ClCompile Include="model\base.cpp" />
     <ClCompile Include="model\primitives\script.cpp" />

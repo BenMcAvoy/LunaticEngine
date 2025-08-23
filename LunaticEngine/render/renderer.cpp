@@ -12,7 +12,7 @@ void Renderer::render(const std::vector<Renderable*>& renderables) {
 	}
 
 	state_->defaultShader.use();
-	state_->defaultShader.set("u_viewProjection", state_->camera.getViewProjection());
+	//state_->defaultShader.set("u_viewProjection", state_->camera.getViewProjection());
 	for (auto* renderable : renderables) {
 		auto model = glm::mat4(1.0f);
 		model = glm::translate(model, glm::vec3(renderable->position, 0.0f));
@@ -24,7 +24,7 @@ void Renderer::render(const std::vector<Renderable*>& renderables) {
 }
 
 void Renderer::resize(int width, int height) {
-	state_->camera.resize(width, height);
+	//state_->camera.resize(width, height);
 	state_->defaultShader.use();
-	state_->defaultShader.set("u_viewProjection", state_->camera.getViewProjection());
+	//state_->defaultShader.set("u_viewProjection", state_->camera.getViewProjection());
 }

@@ -124,7 +124,7 @@ void Engine::run() {
 			}
 		}
 
-		if (ImGui::Begin("Renderables list", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+		if (ImGui::Begin("Renderables list")) {
 			{
 				ImGuiListClipper clipper;
 				clipper.Begin(static_cast<int>(renderables_.size()));
@@ -150,7 +150,7 @@ void Engine::run() {
 			ImGui::End();
 
 		// --- Instance Hierarchy and Inspector ---
-		if (ImGui::Begin("Instance Hierarchy", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+		if (ImGui::Begin("Instance Hierarchy")) {
 			std::function<void(const std::shared_ptr<Instance>&)> drawNode;
 			drawNode = [&](const std::shared_ptr<Instance>& node) {
 				if (!node) return;
@@ -198,7 +198,7 @@ void Engine::run() {
 		}
 			ImGui::End();
 
-		if (ImGui::Begin("Instance Inspector", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+		if (ImGui::Begin("Instance Inspector")) {
 			if (auto sel = selectedInstance_.lock()) {
 				ImGui::Text("Address: 0x%p", static_cast<void*>(sel.get()));
 				ImGui::Text("Class: %s", std::string(sel->getClassName()).c_str());
@@ -261,7 +261,7 @@ void Engine::run() {
 			ImGui::End();
 
 		// Show FPS
-		ImGui::Begin("FPS", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+		ImGui::Begin("FPS");
 		ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
 		ImGui::Text("Frame Time: %.3f ms", ImGui::GetIO().DeltaTime * 1000.0f);
 		renderFrameTimePlot(ImGui::GetIO().DeltaTime);
@@ -577,4 +577,8 @@ void Engine::unregisterUpdateable(Updateable* updateable) {
 		std::iter_swap(it, updateables_.end() - 1);
 		updateables_.pop_back();
 	}
+}
+
+void Engine::registerMainCamera(Camera* camera) {
+	mainCamera_ = camera;
 }

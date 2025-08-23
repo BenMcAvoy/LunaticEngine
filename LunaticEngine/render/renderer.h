@@ -2,14 +2,15 @@
 
 #include "pch.h"
 
-#include "render/camera.h"
 #include "render/shader.h"
+
+#include "model/primitives/camera.h"
 
 namespace Lunatic {
 	class Renderable;
 
 	struct RenderState {
-		Camera camera;
+		//Camera camera;
 		Shader defaultShader;
 	};
 

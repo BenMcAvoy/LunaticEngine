@@ -4,11 +4,13 @@
 
 #include "model/base.h"
 
-#include "render/camera.h"
+//#include "render/camera.h"
 #include "render/renderer.h"
 #include "render/shader.h"
 
 #include "core/luaman.h"
+
+#include "model/primitives/camera.h"
 
 namespace Lunatic {
 	enum class KeyAction {
@@ -57,9 +59,13 @@ namespace Lunatic {
 		void registerUpdateable(Updateable* updateable);
 		void unregisterUpdateable(Updateable* updateable);
 
+		void registerMainCamera(Camera* camera);
+
 	private:
 		std::vector<Renderable*> renderables_;
 		std::vector<Updateable*> updateables_;
+
+		Camera* mainCamera_ = nullptr;
 
 		LuaMan luaManager_;
 		Renderer renderer_;

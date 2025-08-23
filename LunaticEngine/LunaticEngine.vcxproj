@@ -161,12 +161,12 @@
     <ClInclude Include="core\engine.h" />
     <ClInclude Include="core\lua.h" />
     <ClInclude Include="core\luaman.h" />
+    <ClInclude Include="model\primitives\camera.h" />
     <ClInclude Include="model\reflection.h" />
     <ClInclude Include="model\base.h" />
     <ClInclude Include="model\primitives\script.h" />
     <ClInclude Include="model\primitives\sprite.h" />
     <ClInclude Include="pch.h" />
-    <ClInclude Include="render\camera.h" />
     <ClInclude Include="render\renderer.h" />
     <ClInclude Include="render\shader.h" />
     <ClInclude Include="render\vertex.h" />
@@ -175,6 +175,7 @@
   <ItemGroup>
     <ClCompile Include="core\engine.cpp" />
     <ClCompile Include="core\luaman.cpp" />
+    <ClCompile Include="model\primitives\camera.cpp" />
     <ClCompile Include="model\reflection.cpp" />
     <ClCompile Include="model\base.cpp" />
     <ClCompile Include="model\primitives\script.cpp" />
@@ -185,7 +186,6 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="render\camera.cpp" />
     <ClCompile Include="render\renderer.cpp" />
     <ClCompile Include="render\shader.cpp" />
   </ItemGroup>

@@ -2,3 +2,5 @@
 *.json
 *.ini
 *.sln
+
+entt.hpp

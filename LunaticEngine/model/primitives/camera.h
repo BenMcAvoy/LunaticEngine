@@ -23,7 +23,7 @@ namespace Lunatic {
 		}
 
 	private:
-		void draw() override { /* No-op */ }
+		void draw(Shader& shader) override { /* No-op */ }
 
 		void update();
 

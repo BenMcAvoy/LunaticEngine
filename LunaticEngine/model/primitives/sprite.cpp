@@ -43,7 +43,31 @@ std::string Sprite::getClassName() const {
 	return "Sprite";
 }
 
-void Sprite::draw() {
+bool Sprite::setTexture(const std::string& path) {
+	auto it = textures_.find(path);
+	if (it != textures_.end()) {
+		texture_ = it->second;
+		return true;
+	}
+	auto texture = std::make_shared<Texture>();
+	if (!texture->loadFromFile(path)) {
+		std::println("Failed to load texture from {}", path);
+		return false;
+	}
+
+	textures_.emplace(std::string(path), texture);
+	texture_ = texture;
+}
+
+void Sprite::draw(Shader& shader) {
+	if (texture_) {
+		texture_->bind();
+		shader.set("u_useTexture", true);
+		shader.set("u_texture", 0);
+	} else {
+		shader.set("u_useTexture", false);
+	}
+
 	glBindVertexArray(vao_);
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
 }

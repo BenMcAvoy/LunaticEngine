@@ -18,6 +18,8 @@
       ]
     },
     "sol2",
-    "luajit"
+    "luajit",
+    "stb",
+    "entt"
   ]
 }

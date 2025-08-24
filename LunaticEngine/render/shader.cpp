@@ -96,6 +96,12 @@ void Shader::set(const std::string_view name, GLfloat* value) const {
     glUniformMatrix4fv(loc, 1, GL_FALSE, value);
 }
 
+void Shader::set(const std::string_view name, GLuint value) const {
+    GLint loc = glGetUniformLocation(programID_, name.data());
+    if (loc == -1) throw std::runtime_error("Uniform '" + std::string(name) + "' not found");
+	glUniform1i(loc, static_cast<GLint>(value));
+}
+
 void Shader::set(const std::string_view name, const glm::mat4& value) const {
     GLint loc = glGetUniformLocation(programID_, name.data());
     if (loc == -1) throw std::runtime_error("Uniform '" + std::string(name) + "' not found");

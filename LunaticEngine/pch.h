@@ -31,4 +31,6 @@
 
 #include <sol/sol.hpp>
 
-#include <entt.hpp> // used for just reflection, not for ECS
+#include <entt/entt.hpp>
+
+#include <stb_image.h>

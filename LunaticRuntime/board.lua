@@ -1,67 +1,84 @@
 -- NOTE: this code is AI generated, the code all the way further down in the file is not but it is disabled by this code.
 
--- Tic-tac-toe with a minimax AI (AI plays O, human plays X)
-local camera = root:findChildByName("MainCamera")
-local mousePos, worldPos
-local placingX = true -- true => human (X) turn, false => AI (O) turn
+-- Tic-tac-toe with a minimax AI (AI = O, human = X)
+-- Polished: click debounce, proper texture/color handling, reset, hover, and restart delay.
 
--- Restart delay (seconds)
+local camera = root:findChildByName("MainCamera")
+local placingX = true -- true = human (X), false = AI (O)
+
+-- Restart delay in seconds
 local RESTART_SECONDS = 5
 
--- Store board references to sprites
-boardSprites = {}
+-- Board storage: boardSprites[x][y] = { sprite, state }
+-- state: 0 = empty, 1 = X, 2 = O
+local boardSprites = {}
 
+-- Build board references (assumes 3x3 sprites are children in deterministic order)
 local board = script:getParent()
 for i, child in ipairs(board:getChildren()) do
 	if child:isA("Sprite") then
-		-- board is 3x3, make 2d table
 		local x = math.floor((i - 1) / 3) + 1
 		local y = (i - 1) % 3 + 1
 		boardSprites[x] = boardSprites[x] or {}
-		boardSprites[x][y] = {child, 0} -- {sprite, state} ; 0 = empty, 1 = X, 2 = O
+		boardSprites[x][y] = { child, 0 }
 	end
 end
 
 -- RNG seed once
 math.randomseed(os.time() % 2^31)
 
--- Helpers
+-- Helpers to set X and O (ensures texture + white color)
+local function placeXAt(x, y)
+	boardSprites[x][y][2] = 1
+	boardSprites[x][y][1]:setTexture("cross.png")
+	boardSprites[x][y][1]:setColor(vec4.new(1, 1, 1, 1))
+end
+local function placeOAt(x, y)
+	boardSprites[x][y][2] = 2
+	boardSprites[x][y][1]:setTexture("nought.png")
+	boardSprites[x][y][1]:setColor(vec4.new(1, 1, 1, 1))
+end
+
+-- Reset board to cleared black tiles
 local function resetBoard()
 	for x = 1, 3 do
 		for y = 1, 3 do
 			boardSprites[x][y][2] = 0
-			boardSprites[x][y][1]:setColor(vec4.new(0, 0, 0, 1))
+			boardSprites[x][y][1]:clearTexture()
+			boardSprites[x][y][1]:setColor(vec4.new(0, 0, 0, 1)) -- black empty tile
 		end
 	end
 	placingX = true
 end
 
--- Returns 0, 1, 2. 0 means no win
+-- Win checker: returns 0 (none), 1 (X), 2 (O)
 local function checkWin()
-    for i = 1, 3 do
-        if boardSprites[i][1][2] == boardSprites[i][2][2] and boardSprites[i][1][2] == boardSprites[i][3][2] and boardSprites[i][1][2] ~= 0 then
-            return boardSprites[i][1][2]
-        end
-        if boardSprites[1][i][2] == boardSprites[2][i][2] and boardSprites[1][i][2] == boardSprites[3][i][2] and boardSprites[1][i][2] ~= 0 then
-            return boardSprites[1][i][2]
-        end
-    end
-    if boardSprites[1][1][2] == boardSprites[2][2][2] and boardSprites[1][1][2] == boardSprites[3][3][2] and boardSprites[1][1][2] ~= 0 then
-        return boardSprites[1][1][2]
-    end
-    if boardSprites[3][1][2] == boardSprites[2][2][2] and boardSprites[3][1][2] == boardSprites[1][3][2] and boardSprites[3][1][2] ~= 0 then
-        return boardSprites[3][1][2]
-    end
-    return 0 -- No win
+	for i = 1, 3 do
+		-- rows
+		if boardSprites[i][1][2] ~= 0 and boardSprites[i][1][2] == boardSprites[i][2][2] and boardSprites[i][1][2] == boardSprites[i][3][2] then
+			return boardSprites[i][1][2]
+		end
+		-- cols
+		if boardSprites[1][i][2] ~= 0 and boardSprites[1][i][2] == boardSprites[2][i][2] and boardSprites[1][i][2] == boardSprites[3][i][2] then
+			return boardSprites[1][i][2]
+		end
+	end
+	-- diagonals
+	if boardSprites[1][1][2] ~= 0 and boardSprites[1][1][2] == boardSprites[2][2][2] and boardSprites[1][1][2] == boardSprites[3][3][2] then
+		return boardSprites[1][1][2]
+	end
+	if boardSprites[3][1][2] ~= 0 and boardSprites[3][1][2] == boardSprites[2][2][2] and boardSprites[3][1][2] == boardSprites[1][3][2] then
+		return boardSprites[3][1][2]
+	end
+	return 0
 end
 
--- Helper: returns list of empty cells as { {x,y}, ... }
 local function emptyCells()
 	local list = {}
 	for x = 1, 3 do
 		for y = 1, 3 do
 			if boardSprites[x][y][2] == 0 then
-				table.insert(list, {x, y})
+				table.insert(list, { x, y })
 			end
 		end
 	end
@@ -72,29 +89,24 @@ local function isBoardFull()
 	return #emptyCells() == 0
 end
 
--- Minimax for tic-tac-toe
--- AI is '2' (O) and tries to maximize score.
--- Human is '1' (X) and tries to minimize score.
--- Scoring: AI win -> +10 - depth, Human win -> -10 + depth, Draw -> 0
+-- Minimax (AI tries to maximize; human tries to minimize)
 local function minimax(isMaximizing, depth)
 	local winner = checkWin()
 	if winner ~= 0 then
-		if winner == 2 then return 10 - depth end
-		if winner == 1 then return depth - 10 end
+		if winner == 2 then return 10 - depth end -- AI win
+		if winner == 1 then return depth - 10 end -- Human win
 	end
 
 	local empties = emptyCells()
-	if #empties == 0 then
-		return 0 -- draw
-	end
+	if #empties == 0 then return 0 end -- draw
 
 	if isMaximizing then
 		local best = -1e9
 		for _, cell in ipairs(empties) do
 			local x, y = cell[1], cell[2]
-			boardSprites[x][y][2] = 2 -- AI move
+			boardSprites[x][y][2] = 2
 			local score = minimax(false, depth + 1)
-			boardSprites[x][y][2] = 0 -- undo
+			boardSprites[x][y][2] = 0
 			if score > best then best = score end
 		end
 		return best
@@ -102,16 +114,16 @@ local function minimax(isMaximizing, depth)
 		local best = 1e9
 		for _, cell in ipairs(empties) do
 			local x, y = cell[1], cell[2]
-			boardSprites[x][y][2] = 1 -- Human move
+			boardSprites[x][y][2] = 1
 			local score = minimax(true, depth + 1)
-			boardSprites[x][y][2] = 0 -- undo
+			boardSprites[x][y][2] = 0
 			if score < best then best = score end
 		end
 		return best
 	end
 end
 
--- Choose best move for AI using minimax, with random tie-breaking among equal-score moves
+-- Choose best move with random tie-breaking
 local function chooseBestMove()
 	local bestScore = -1e9
 	local bestMoves = {}
@@ -120,48 +132,40 @@ local function chooseBestMove()
 
 	for _, cell in ipairs(empties) do
 		local x, y = cell[1], cell[2]
-		boardSprites[x][y][2] = 2 -- try
+		boardSprites[x][y][2] = 2
 		local score = minimax(false, 0)
-		boardSprites[x][y][2] = 0 -- undo
+		boardSprites[x][y][2] = 0
 
 		if score > bestScore then
 			bestScore = score
-			bestMoves = {{x, y}}
+			bestMoves = { { x, y } }
 		elseif score == bestScore then
-			table.insert(bestMoves, {x, y})
+			table.insert(bestMoves, { x, y })
 		end
 	end
 
-	-- random tie-break
 	local pick = bestMoves[math.random(1, #bestMoves)]
 	return pick[1], pick[2]
 end
 
--- Fake AI thinking then place best move
+-- AI "thinking" then place move
 local function aiTakeTurn()
-	-- If no moves left, just return (draw will be handled in main loop)
-	if isBoardFull() then
-		return
-	end
+	if isBoardFull() then return end
 
-	-- random think time between 20 and 60 frames
 	local thinkFrames = math.random(20, 60)
-
 	for f = 1, thinkFrames do
 		local dots = string.rep(".", (f % 3) + 1)
 		engine:drawText(vec2.new(0, 0.95), "AI is thinking" .. dots, vec4.new(1, 1, 1, 1))
 		yield()
 	end
 
-	-- compute best move and play it
 	local bx, by = chooseBestMove()
 	if bx and by then
-		boardSprites[bx][by][2] = 2
-		boardSprites[bx][by][1]:setColor(vec4.new(0, 0, 1, 1)) -- immediate visual feedback
+		placeOAt(bx, by)
 	end
 end
 
--- Show result text for RESTART_SECONDS then reset the board
+-- Show result text then restart
 local function showResultThenRestart(win)
 	local start = os.clock()
 	while (os.clock() - start) < RESTART_SECONDS do
@@ -173,83 +177,72 @@ local function showResultThenRestart(win)
 		end
 		yield()
 	end
-
-	-- After the delay, reset the board
 	resetBoard()
 end
 
--- main loop
+-- Click debouncing: track previous left mouse state
+local prevLeft = 0
+
+-- Main loop
 while true do
-    local win = checkWin()
-    if win ~= 0 or isBoardFull() then
-        -- show result for RESTART_SECONDS then restart
-        showResultThenRestart(win)
-        -- continue main loop with a fresh board
-    end
+	-- If finished (win or full) show result then restart
+	local win = checkWin()
+	if win ~= 0 or isBoardFull() then
+		showResultThenRestart(win)
+		-- after this returns, board is reset
+	end
 
-    -- AI turn - run thinking + move, then hand control back to human
-    if not placingX then
-        aiTakeTurn()
-        placingX = true
-        -- allow the frame to process and render the new move
-    end
+	-- AI turn
+	if not placingX then
+		aiTakeTurn()
+		placingX = true
+	end
 
-    -- Draw prompt text for the current player
-    local text = placingX and "Click to place X" or "Click to place O"
-    engine:drawText(vec2.new(0, 0.95), text, vec4.new(1, 1, 1, 1))
+	-- Draw prompt for player
+	local prompt = placingX and "Click to place X" or "AI thinking..."
+	engine:drawText(vec2.new(0, 0.95), prompt, vec4.new(1, 1, 1, 1))
 
-    -- Get mouse state (used only if it's the human's turn)
-    local leftClick = engine:getMouseButtonState(0)
+	-- Get input once per frame
+	local leftClick = engine:getMouseButtonState(0)
+	local mousePos = engine:getMousePos()
+	local worldPos = camera:screenToWorld(mousePos)
 
-    -- Process board sprites (hover, placement, coloring)
-    for x, v in pairs(boardSprites) do
-        for y, boardSprite in pairs(v) do
-            local position = boardSprite[1]:getPosition()
-            local half = 0.25 -- sprite is 0.5x0.5, so half-size = 0.25
+	-- Process cells explicitly in deterministic order (1..3)
+	for x = 1, 3 do
+		for y = 1, 3 do
+			local boardSprite = boardSprites[x][y]
+			local sprite = boardSprite[1]
+			local state = boardSprite[2]
 
-            mousePos = engine:getMousePos()
-            worldPos = camera:screenToWorld(mousePos)
+			local pos = sprite:getPosition()
+			local half = 0.25 -- sprite is 0.5x0.5
 
-            -- 2D AABB check (ignore Z)
-            local inside =
-                worldPos.x >= position.x - half and worldPos.x <= position.x + half and
-                worldPos.y >= position.y - half and worldPos.y <= position.y + half
+			local inside =
+				worldPos.x >= pos.x - half and worldPos.x <= pos.x + half and
+				worldPos.y >= pos.y - half and worldPos.y <= pos.y + half
 
-            -- Hover highlight only when human's turn (placingX)
-            if inside then
-                if boardSprite[2] == 0 and placingX then
-                    boardSprite[1]:setColor(vec4.new(0.2, 0.2, 0.2, 1)) -- grey for hover empty
-                end
+			-- Hover highlight only for empty cells and only on player's turn
+			if inside and state == 0 and placingX then
+				sprite:setColor(vec4.new(0.2, 0.2, 0.2, 1))
+			elseif state == 0 then
+				-- ensure empty non-hover cells are black and have no texture
+				sprite:clearTexture()
+				sprite:setColor(vec4.new(0, 0, 0, 1))
+			end
 
-                if placingX and leftClick == 1 then
-                    local colour = 1 -- human always X
-                    if boardSprite[2] == 0 then -- Only place if the cell is empty
-                        boardSprite[2] = colour
-                        placingX = not placingX -- Toggle turn (this hands turn to AI if it becomes false)
-                    end
-                end
-            else
-                -- reset empty cell color (black background)
-                if boardSprite[2] == 0 then
-                    boardSprite[1]:setColor(vec4.new(0, 0, 0, 1))
-                end
-            end
+			-- Human placement: rising edge detection (click down this frame but not previous)
+			if placingX and inside and leftClick == 1 and prevLeft == 0 and state == 0 then
+				placeXAt(x, y)
+				placingX = false -- hand turn to AI
+			end
+		end
+	end
 
-            -- apply state colors (these override hover)
-            local state = boardSprite[2]
-            if state == 0 then
-                -- leave as-is (either hover set above or reset)
-            elseif state == 1 then
-                boardSprite[1]:setColor(vec4.new(1, 0, 0, 1)) -- Red for X
-            elseif state == 2 then
-                boardSprite[1]:setColor(vec4.new(0, 0, 1, 1)) -- Blue for O
-            end
-        end
-    end
+	-- Update prevLeft for debounce
+	prevLeft = leftClick
 
-    yield()
+	yield()
 end
-
 
 
 

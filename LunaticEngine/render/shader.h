@@ -27,10 +27,24 @@ out vec4 FragColor;
 
 uniform vec4 u_colour;
 
+uniform bool u_useTexture = false;
+uniform sampler2D u_texture;
+
 in vec2 TexCoord;
 
 void main() {
-    FragColor = u_colour;
+    //FragColor = u_colour;
+    if (u_useTexture) {
+        vec3 rgb = vec3(u_colour);
+        float V = max(max(rgb.r, rgb.g), rgb.b);
+        FragColor = texture(u_texture, TexCoord) * V;
+    } else {
+        FragColor = u_colour;
+    }
+
+	if (FragColor.a < 0.1) {
+        discard;
+    }
 }
 )";
 
@@ -51,6 +65,7 @@ public:
     void set(std::string_view name, int value) const;
     void set(std::string_view name, bool value) const;
     void set(std::string_view name, GLfloat *value) const;
+    void set(std::string_view name, GLuint value) const;
     void set(std::string_view name, const glm::mat4& value) const;
 	void set(std::string_view name, const glm::vec2& value) const;
     void set(std::string_view name, const glm::vec3& value) const;

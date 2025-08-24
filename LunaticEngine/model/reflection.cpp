@@ -2,15 +2,6 @@
 #include "pch.h"
 #include "reflection.h"
 
-#include <sol/sol.hpp>
-#include <entt.hpp>
-
-#include <string>
-#include <string_view>
-#include <vector>
-#include <memory>
-#include <iostream>
-
 namespace Lunatic {
 
 void Lunatic::initReflection() {
@@ -43,15 +34,15 @@ void Lunatic::initReflection() {
         .base<Instance>()
         .base<Renderable>()
         .func<&Sprite::draw>("draw"_hs)
-        .func<&Sprite::getVAO>("getVAO"_hs);
+        .func<&Sprite::setTexture>("setTexture"_hs)
+        .func<&Sprite::clearTexture>("clearTexture"_hs);
 
     entt::meta_factory<Script>()
         .type("Script"_hs)
         .base<Instance>()
         .base<Updateable>()
         .func<&Script::loadCode>("loadCode"_hs)
-        .func<&Script::update>("update"_hs)
-        .func<&Script::callCounter>("callCounter"_hs);
+        .func<&Script::update>("update"_hs);
 
     entt::meta_factory<Camera>()
         .type("Camera"_hs)

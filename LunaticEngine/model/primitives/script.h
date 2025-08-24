@@ -15,12 +15,8 @@ namespace Lunatic {
 		}
 
 		void loadCode(std::string_view code);
-		
-		virtual void update() override;
 
-		int callCounter() {
-			static int c = 0; ++c; return c;
-		}
+		virtual void update() override;
 
 	private:
 		static inline sol::state lua_;

@@ -2,6 +2,8 @@
 
 #include "pch.h"
 
+#include "render/shader.h"
+
 namespace Lunatic {
 	class Instance : public std::enable_shared_from_this<Instance> {
 	protected:
@@ -53,7 +55,7 @@ namespace Lunatic {
 		Renderable(); // Registers the Renderable* to the renderer
 		~Renderable(); // Unregisters the Renderable* from the renderer
 
-		virtual void draw() = 0;
+		virtual void draw(Shader& shader) = 0;
 	};
 
 	class Updateable {

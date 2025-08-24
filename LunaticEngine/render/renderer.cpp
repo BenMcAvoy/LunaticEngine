@@ -25,7 +25,7 @@ void Renderer::render(const std::vector<Renderable*>& renderables) {
 		model = glm::scale(model, glm::vec3(renderable->scale, 1.0f));
 		state_->defaultShader.set("u_model", model);
 		state_->defaultShader.set("u_colour", renderable->color);
-		renderable->draw();
+		renderable->draw(state_->defaultShader);
 	}
 }
 

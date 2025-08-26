@@ -21,15 +21,18 @@ int main(int argc, char** argv) {
 
 	auto camera = AddObjectTo<Lunatic::Camera>("MainCamera", engine.rootInstance);
 
-	auto boardFolder = AddObjectTo<Lunatic::Instance>("Board", engine.rootInstance);
+	auto bg = AddObjectTo<Lunatic::Sprite>("Background", engine.rootInstance);
+	bg->setScale({ 4.0f, 4.0f });
+	bg->setTexture("paper.png");
 
 	// Create 3x3 grid of sprites, (1, 1) being in the middle, (0, 0) bottom-left, (2, 2) top-right
+	auto boardFolder = AddObjectTo<Lunatic::Instance>("Board", engine.rootInstance);
 	for (int x = 0; x < 3; x++) {
 		for (int y = 0; y < 3; y++) {
 			auto sprite = AddObjectTo<Lunatic::Sprite>("Sprite_" + std::to_string(x+1) + "_" + std::to_string(y+1), boardFolder);
 			sprite->setPosition({ (x - 1) * 0.6f, (y - 1) * 0.6f });
 			sprite->setScale({ 0.5f, 0.5f });
-			sprite->setColor({ 0.0, 0.0, 0.0, 1.0 });
+			sprite->setColor({ 0.0, 0.0, 0.0, 0.0 });
 		}
 	}
 
@@ -68,6 +71,31 @@ int main(int argc, char** argv) {
 			}
 		}
 		});
+
+	auto cursor = AddObjectTo<Lunatic::Sprite>("Cursor", engine.rootInstance);
+	cursor->setScale({ 0.3f, 0.3f });
+	cursor->setTexture("cursor1.png");
+	auto cursorScript = AddObjectTo<Lunatic::Script>("CursorScript", cursor);
+	cursorScript->loadCode(R"(
+		local camera = root:findChildByName("MainCamera")
+		local sprite = script:getParent()
+		local mousePos, worldPos
+		local i = 0
+
+		while true do
+			engine:hideCursor()
+			i = i + 1
+			if i % 10 == 0 then
+				local texIndex = math.floor(i / 10) % 3 + 1
+				sprite:setTexture("cursor" .. texIndex .. ".png")
+			end
+
+			mousePos = engine:getMousePos()
+			worldPos = camera:screenToWorld(mousePos)
+			sprite:setPosition(worldPos)
+			yield()
+		end
+	)");
 
 	/*auto sprite = AddObjectTo<Lunatic::Sprite>("ChildSprite", engine.rootInstance);
 	auto script = AddObjectTo<Lunatic::Script>("TestScript", sprite);

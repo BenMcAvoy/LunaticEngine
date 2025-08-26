@@ -1,7 +1,7 @@
 -- NOTE: this code is AI generated, the code all the way further down in the file is not but it is disabled by this code.
 
 -- Tic-tac-toe with a minimax AI (AI = O, human = X)
--- Polished: click debounce, proper texture/color handling, reset, hover, and restart delay.
+-- Polished: proper texture/color handling, reset, hover, restart delay, and win highlight.
 
 local camera = root:findChildByName("MainCamera")
 local placingX = true -- true = human (X), false = AI (O)
@@ -27,25 +27,33 @@ end
 -- RNG seed once
 math.randomseed(os.time() % 2^31)
 
+-- Helper to pick a random variant 1..3 for a base name (e.g., "circle" -> "circle2.png")
+local function randomVariantTexture(base)
+	return string.format("%s%d.png", base, math.random(1, 3))
+end
+
 -- Helpers to set X and O (ensures texture + white color)
 local function placeXAt(x, y)
 	boardSprites[x][y][2] = 1
-	boardSprites[x][y][1]:setTexture("cross.png")
+	boardSprites[x][y][1]:setTexture(randomVariantTexture("cursor"))
+	-- White = max brightness for textured sprites with this shader
 	boardSprites[x][y][1]:setColor(vec4.new(1, 1, 1, 1))
 end
 local function placeOAt(x, y)
 	boardSprites[x][y][2] = 2
-	boardSprites[x][y][1]:setTexture("nought.png")
+	boardSprites[x][y][1]:setTexture(randomVariantTexture("circle"))
+	-- White = max brightness for textured sprites with this shader
 	boardSprites[x][y][1]:setColor(vec4.new(1, 1, 1, 1))
 end
 
--- Reset board to cleared black tiles
+-- Reset board to very transparent black tiles
 local function resetBoard()
 	for x = 1, 3 do
 		for y = 1, 3 do
 			boardSprites[x][y][2] = 0
 			boardSprites[x][y][1]:clearTexture()
-			boardSprites[x][y][1]:setColor(vec4.new(0, 0, 0, 1)) -- black empty tile
+			-- Set to very transparent black (suggests interaction, not a sprite)
+			boardSprites[x][y][1]:setColor(vec4.new(0, 0, 0, 0.08))
 		end
 	end
 	placingX = true
@@ -53,6 +61,7 @@ end
 
 -- Win checker: returns 0 (none), 1 (X), 2 (O)
 local function checkWin()
+	-- Keep this for minimax
 	for i = 1, 3 do
 		-- rows
 		if boardSprites[i][1][2] ~= 0 and boardSprites[i][1][2] == boardSprites[i][2][2] and boardSprites[i][1][2] == boardSprites[i][3][2] then
@@ -71,6 +80,28 @@ local function checkWin()
 		return boardSprites[3][1][2]
 	end
 	return 0
+end
+
+-- Detailed win checker: returns winner and the 3 winning cells as {{x,y}, {x,y}, {x,y}}
+local function checkWinDetailed()
+	for i = 1, 3 do
+		-- rows
+		if boardSprites[i][1][2] ~= 0 and boardSprites[i][1][2] == boardSprites[i][2][2] and boardSprites[i][1][2] == boardSprites[i][3][2] then
+			return boardSprites[i][1][2], { { i, 1 }, { i, 2 }, { i, 3 } }
+		end
+		-- cols
+		if boardSprites[1][i][2] ~= 0 and boardSprites[1][i][2] == boardSprites[2][i][2] and boardSprites[1][i][2] == boardSprites[3][i][2] then
+			return boardSprites[1][i][2], { { 1, i }, { 2, i }, { 3, i } }
+		end
+	end
+	-- diagonals
+	if boardSprites[1][1][2] ~= 0 and boardSprites[1][1][2] == boardSprites[2][2][2] and boardSprites[1][1][2] == boardSprites[3][3][2] then
+		return boardSprites[1][1][2], { { 1, 1 }, { 2, 2 }, { 3, 3 } }
+	end
+	if boardSprites[3][1][2] ~= 0 and boardSprites[3][1][2] == boardSprites[2][2][2] and boardSprites[3][1][2] == boardSprites[1][3][2] then
+		return boardSprites[3][1][2], { { 3, 1 }, { 2, 2 }, { 1, 3 } }
+	end
+	return 0, nil
 end
 
 local function emptyCells()
@@ -155,7 +186,7 @@ local function aiTakeTurn()
 	local thinkFrames = math.random(20, 60)
 	for f = 1, thinkFrames do
 		local dots = string.rep(".", (f % 3) + 1)
-		engine:drawText(vec2.new(0, 0.95), "AI is thinking" .. dots, vec4.new(1, 1, 1, 1))
+		engine:drawText(vec2.new(0, 0.95), "AI is thinking" .. dots, vec4.new(0.2, 0.2, 0.2, 1))
 		yield()
 	end
 
@@ -165,30 +196,58 @@ local function aiTakeTurn()
 	end
 end
 
+-- Apply win highlight: keep winning cells bright (white), dim other placed cells
+local function applyWinHighlight(winCells)
+	if not winCells then return end
+	local set = {}
+	for _, c in ipairs(winCells) do
+		set[c[1] .. "," .. c[2]] = true
+	end
+	for x = 1, 3 do
+		for y = 1, 3 do
+			local sprite = boardSprites[x][y][1]
+			local state = boardSprites[x][y][2]
+			if state ~= 0 then
+				if set[x .. "," .. y] then
+					-- Full brightness for winners
+					sprite:setColor(vec4.new(1, 1, 1, 1))
+				else
+					-- Dim non-winning marks to emphasize the line
+					sprite:setColor(vec4.new(0.25, 0.25, 0.25, 1))
+				end
+			else
+				-- leave empty cells as-is (already very faint)
+			end
+		end
+	end
+end
+
 -- Show result text then restart
-local function showResultThenRestart(win)
+local function showResultThenRestart(win, winCells)
+	-- Highlight winning connection if any
+	if win ~= 0 and winCells then
+		applyWinHighlight(winCells)
+	end
+
 	local start = os.clock()
 	while (os.clock() - start) < RESTART_SECONDS do
 		if win ~= 0 then
 			local winText = win == 1 and "X wins!" or "O wins!"
-			engine:drawText(vec2.new(0, 0.95), winText, vec4.new(1, 1, 1, 1))
+			engine:drawText(vec2.new(0, 0.95), winText, vec4.new(0.2, 0.2, 0.2, 1))
 		else
-			engine:drawText(vec2.new(0, 0.95), "Draw!", vec4.new(1, 1, 1, 1))
+			engine:drawText(vec2.new(0, 0.95), "Draw!", vec4.new(0.2, 0.2, 0.2, 1))
 		end
 		yield()
 	end
 	resetBoard()
 end
 
--- Click debouncing: track previous left mouse state
-local prevLeft = 0
-
 -- Main loop
 while true do
 	-- If finished (win or full) show result then restart
-	local win = checkWin()
+	local win, winCells = checkWinDetailed()
 	if win ~= 0 or isBoardFull() then
-		showResultThenRestart(win)
+		showResultThenRestart(win, winCells)
 		-- after this returns, board is reset
 	end
 
@@ -200,7 +259,7 @@ while true do
 
 	-- Draw prompt for player
 	local prompt = placingX and "Click to place X" or "AI thinking..."
-	engine:drawText(vec2.new(0, 0.95), prompt, vec4.new(1, 1, 1, 1))
+	engine:drawText(vec2.new(0, 0.95), prompt, vec4.new(0.2, 0.2, 0.2, 1))
 
 	-- Get input once per frame
 	local leftClick = engine:getMouseButtonState(0)
@@ -223,30 +282,24 @@ while true do
 
 			-- Hover highlight only for empty cells and only on player's turn
 			if inside and state == 0 and placingX then
-				sprite:setColor(vec4.new(0.2, 0.2, 0.2, 1))
+				-- Slightly more visible on hover (suggest interaction, not presence)
+				sprite:setColor(vec4.new(0.15, 0.15, 0.15, 0.18))
 			elseif state == 0 then
-				-- ensure empty non-hover cells are black and have no texture
+				-- ensure empty non-hover cells are very transparent black, no texture
 				sprite:clearTexture()
-				sprite:setColor(vec4.new(0, 0, 0, 1))
+				sprite:setColor(vec4.new(0, 0, 0, 0.08))
 			end
 
-			-- Human placement: rising edge detection (click down this frame but not previous)
-			if placingX and inside and leftClick == 1 and prevLeft == 0 and state == 0 then
+			-- Human placement: on left mouse held down (no debounce)
+			if placingX and inside and leftClick == 1 and state == 0 then
 				placeXAt(x, y)
 				placingX = false -- hand turn to AI
 			end
 		end
 	end
 
-	-- Update prevLeft for debounce
-	prevLeft = leftClick
-
 	yield()
 end
-
-
-
-
 
 
 
@@ -340,13 +393,13 @@ while true do
     if win ~= 0 then
         while true do
             local winText = win == 1 and "X wins!" or "O wins!"
-            engine:drawText(vec2.new(0, 0.95), winText, vec4.new(1, 1, 1, 1))
+            engine:drawText(vec2.new(0, 0.95), winText, vec4.new(0.2, 0.2, 0.2, 1))
             yield()
         end
     end
 
     local text = placingX and "Click to place X" or "Click to place O"
-    engine:drawText(vec2.new(0, 0.95), text, vec4.new(1, 1, 1, 1))
+    engine:drawText(vec2.new(0, 0.95), text, vec4.new(0.2, 0.2, 0.2, 1))
 
     local leftClick = engine:getMouseButtonState(0)
 

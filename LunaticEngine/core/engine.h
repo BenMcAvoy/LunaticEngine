@@ -50,6 +50,9 @@ namespace Lunatic {
 
 		void drawText(glm::vec2 position, const std::string& text, glm::vec4 colour);
 
+		void hideCursor();
+		void showCursor();
+
 		// Resizes the window and updates the camera viewport
 		void resize(int width, int height);
 

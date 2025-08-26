@@ -156,6 +156,8 @@ Engine::Engine() {
 }
 
 void Engine::run() {
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); 
 	while (!glfwWindowShouldClose(glfwWindow_)) {
 		// Poll events first so callbacks update input state before we render the frame
 		glfwPollEvents();
@@ -284,6 +286,7 @@ void Engine::run() {
 						}() ? "Yes" : "No"));
 
 					ImGui::DragFloat2("Position", &asRenderable->position.x, 0.025f);
+					ImGui::DragFloat2("Scale", &asRenderable->scale.x, 0.025f);
 
 					// Sprite-specific info
 					if (std::string(sel->getClassName()) == "Sprite") {
@@ -317,6 +320,18 @@ void Engine::run() {
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 		glfwSwapBuffers(glfwWindow_);
+	}
+}
+
+void Engine::hideCursor() {
+	if (glfwWindow_) {
+		glfwSetInputMode(glfwWindow_, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+	}
+}
+
+void Engine::showCursor() {
+	if (glfwWindow_) {
+		glfwSetInputMode(glfwWindow_, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 	}
 }
 

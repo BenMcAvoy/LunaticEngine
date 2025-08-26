@@ -218,7 +218,9 @@ void Script::loadCode(std::string_view code) {
 			"getMousePos", &Engine::getMousePos,
 			"getMouseButtonState", &Engine::getMouseButtonState,
 			"getKeyState", &Engine::getKeyState,
-			"drawText", &Engine::drawText
+			"drawText", &Engine::drawText,
+			"hideCursor", &Engine::hideCursor,
+			"showCursor", &Engine::showCursor
 		);
 
         // glm::vec2 binding

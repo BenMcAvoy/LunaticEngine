@@ -42,7 +42,7 @@ void main() {
         FragColor = u_colour;
     }
 
-	if (FragColor.a < 0.1) {
+	if (FragColor.a < 0.01) {
         discard;
     }
 }

@@ -9,10 +9,12 @@
 namespace Lunatic {
     class Sprite : public Instance, public Renderable {
     public:
-        explicit Sprite(const std::string_view name);
-        std::string getClassName() const override;
+        explicit Sprite(std::string_view name);
+        std::string_view getClassName() const override {
+			return "Sprite";
+        }
 
-		bool setTexture(const std::string& path);
+		bool setTexture(std::string_view path);
 		void clearTexture() { texture_ = nullptr; }
 
         void draw(Shader& shader) override;

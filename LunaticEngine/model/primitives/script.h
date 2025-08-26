@@ -5,12 +5,17 @@
 #include "model/base.h"
 
 namespace Lunatic {
+	struct PropertyBinding {
+		entt::meta_func setter;
+		entt::meta_func getter;
+	};
+
 	class Script : public Instance, public Updateable {
 	public:
-		explicit Script(const std::string& name);
+		explicit Script(std::string_view name);
 		virtual ~Script() = default;
 
-		virtual std::string getClassName() const override {
+		virtual std::string_view getClassName() const override {
 			return "Script";
 		}
 
@@ -21,6 +26,7 @@ namespace Lunatic {
 	private:
 		static inline sol::state lua_;
 		static inline bool luaInit_ = false;
+		//static inline Utils::HeteroStringMap<PropertyBinding> propertyBindings_;
 
 		bool finished_ = false;
 		std::string code_;

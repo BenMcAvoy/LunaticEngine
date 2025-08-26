@@ -39,11 +39,7 @@ Sprite::Sprite(const std::string_view name) : Instance(name), Renderable() {
 	}
 }
 
-std::string Sprite::getClassName() const {
-	return "Sprite";
-}
-
-bool Sprite::setTexture(const std::string& path) {
+bool Sprite::setTexture(std::string_view path) {
 	auto it = textures_.find(path);
 	if (it != textures_.end()) {
 		texture_ = it->second;

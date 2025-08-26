@@ -18,20 +18,20 @@ namespace Lunatic {
 		entt::meta_type metaType;
 
 		std::string_view getName() const;
-		void setName(const std::string_view name);
+		void setName(std::string_view name);
 
 		std::shared_ptr<Instance> getParent() const;
 		void setParent(std::shared_ptr<Instance> parent);
 
 		const std::vector<std::shared_ptr<Instance>>& getChildren() const;
-		std::shared_ptr<Instance> findChildByName(std::string name) const;
+		std::shared_ptr<Instance> findChildByName(std::string_view name) const;
 
-		bool isA(const std::string& className) const {
+		bool isA(std::string_view className) const {
 			auto type = entt::resolve(entt::hashed_string{ className.data() });
 			return type == metaType;
 		}
 
-		virtual std::string getClassName() const;
+		virtual std::string_view getClassName() const;
 		virtual void onAncestorChanged() { /* No-op by default, not always needed */ }
 	};
 

@@ -4,7 +4,7 @@
 
 using namespace Lunatic;
 
-NativeScript::NativeScript(const std::string& name) : Instance(name), Updateable() {
+NativeScript::NativeScript(std::string_view name) : Instance(name), Updateable() {
 	metaType = entt::resolve<NativeScript>();
 }
 

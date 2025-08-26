@@ -7,7 +7,7 @@
 using namespace Lunatic;
 
 // Don't call `Renderable` constructor here to avoid adding to renderables list (the camera shouldn't be rendered traditionally)
-Camera::Camera(std::string name) : Instance(std::move(name)) {
+Camera::Camera(std::string_view name) : Instance(name) {
 	position_ = { 0.0f, 0.0f, 0.0f };
 	viewportSize_ = { 800.0f, 600.0f };
 	rotation_ = 0.0f;

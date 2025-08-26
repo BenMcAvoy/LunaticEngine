@@ -8,7 +8,7 @@
 
 using namespace Lunatic;
 
-Instance::Instance(const std::string_view name) : name_(name) {
+Instance::Instance(std::string_view name) : name_(name) {
 	metaType = entt::resolve<Instance>();
 }
 
@@ -16,7 +16,7 @@ std::string_view Instance::getName() const {
 	return name_;
 }
 
-void Instance::setName(const std::string_view name) {
+void Instance::setName(std::string_view name) {
 	name_ = name;
 }
 
@@ -43,7 +43,7 @@ const std::vector<std::shared_ptr<Instance>>& Instance::getChildren() const {
 	return children_;
 }
 
-std::shared_ptr<Instance> Instance::findChildByName(std::string name) const {
+std::shared_ptr<Instance> Instance::findChildByName(std::string_view name) const {
 	for (const auto& child : children_) {
 		if (child->getName() == name) {
 			return child;
@@ -52,7 +52,7 @@ std::shared_ptr<Instance> Instance::findChildByName(std::string name) const {
 	return nullptr;
 }
 
-std::string Instance::getClassName() const {
+std::string_view Instance::getClassName() const {
 	return "Instance";
 }
 

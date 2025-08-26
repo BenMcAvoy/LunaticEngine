@@ -8,7 +8,7 @@
 
 using namespace Lunatic;
 
-Script::Script(const std::string& name) : Instance(name), Updateable() {
+Script::Script(std::string_view name) : Instance(name), Updateable() {
 	metaType = entt::resolve<Script>();
 }
 
@@ -23,7 +23,7 @@ entt::meta_any luaToENTT(sol::object obj) {
         case sol::type::number:
             return entt::meta_any(obj.as<double>());
         case sol::type::string:
-            return entt::meta_any(obj.as<std::string>());
+            return entt::meta_any(obj.as<std::string_view>());
         case sol::type::boolean:
             return entt::meta_any(obj.as<bool>());
         case sol::type::table: {
@@ -166,7 +166,7 @@ void Script::loadCode(std::string_view code) {
             std::println("Lua: {}", msg);
             });
 
-        auto indexFunc = [](sol::this_state ts, Instance& inst, const std::string& key) -> sol::object {
+        auto indexFunc = [](sol::this_state ts, Instance& inst, std::string_view key) -> sol::object {
             auto ss = inst.shared_from_this();
             if (!ss) return sol::nil;
 
@@ -176,11 +176,13 @@ void Script::loadCode(std::string_view code) {
 				static auto cameraMetaType = entt::resolve<Camera>();
 				static auto instanceMetaType = entt::resolve<Instance>();
 
-				std::vector<entt::meta_any> args;
+				static std::vector<entt::meta_any> args;
+                args.clear();
+
 				auto begin = sVA.begin();
 				begin++; // skip first arg (self)
 				for (auto it = begin; it != sVA.end(); ++it) {
-					args.push_back(luaToENTT(*it));
+					args.emplace_back(luaToENTT(*it));
 				}
 
                 if (ss->metaType == instanceMetaType) {
@@ -264,6 +266,8 @@ void Script::loadCode(std::string_view code) {
     // Re-wrap the moved function, and set env
     sol::function cofn(co, -1);
     sol::set_environment(env_, cofn);
+	static auto& engine = Engine::getInstance();
+	env_["engine"] = &engine;
     // Build the coroutine from the thread's function
     coroutine_ = sol::coroutine(cofn);
 
@@ -280,11 +284,7 @@ void Script::update() {
 	std::shared_ptr<Instance> sharedPtr = shared_from_this();
 	env_["script"] = sharedPtr;
 
-	//env_["engine"] = &Engine::getInstance();
-	//env_["root"] = Engine::getInstance().getRootInstance();
-
 	static auto& engine = Engine::getInstance();
-	env_["engine"] = &engine;
 	env_["root"] = engine.rootInstance;
 
 	sol::protected_function_result result = coroutine_();

@@ -9,7 +9,7 @@
 namespace Lunatic {
 	class Camera : public Instance, public Renderable {
 	public:
-		explicit Camera(std::string name = "MainCamera");
+		explicit Camera(std::string_view name = "MainCamera");
 		~Camera() = default;
 
 		void use(Shader& shader);
@@ -18,7 +18,7 @@ namespace Lunatic {
 		glm::vec2 screenToWorld(const glm::vec2& screenPos);
 		glm::vec2 worldToScreen(const glm::vec2& worldPos);
 
-		virtual std::string getClassName() const override {
+		virtual std::string_view getClassName() const override {
 			return "Camera";
 		}
 

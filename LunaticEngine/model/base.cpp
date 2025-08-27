@@ -9,6 +9,12 @@
 using namespace Lunatic;
 
 Instance::Instance(std::string_view name) : name_(name) {
+	static bool oneTime = false;
+	if (!oneTime) {
+		reflect();
+		oneTime = true;
+	}
+
 	metaType = entt::resolve<Instance>();
 }
 
@@ -57,6 +63,7 @@ std::string_view Instance::getClassName() const {
 }
 
 Renderable::Renderable() {
+	reflect();
 	Engine::getInstance().registerRenderable(this);
 }
 Renderable::~Renderable() {
@@ -64,6 +71,7 @@ Renderable::~Renderable() {
 }
 
 Updateable::Updateable() {
+	reflect();
 	Engine::getInstance().registerUpdateable(this);
 }
 Updateable::~Updateable() {

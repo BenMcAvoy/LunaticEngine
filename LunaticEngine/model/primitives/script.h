@@ -23,6 +23,9 @@ namespace Lunatic {
 
 		virtual void update() override;
 
+	protected:
+		void reflect() override;
+
 	private:
 		static inline sol::state lua_;
 		static inline bool luaInit_ = false;

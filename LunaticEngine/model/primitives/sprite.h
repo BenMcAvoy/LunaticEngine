@@ -19,6 +19,9 @@ namespace Lunatic {
 
         void draw(Shader& shader) override;
 
+    protected:
+        void reflect() override;
+
     private:
         // All data below is static and shared across all instances of Sprite
         static inline bool dataInitialized_ = false;
@@ -27,6 +30,7 @@ namespace Lunatic {
         static inline GLuint ebo_ = 0;
 		static inline Utils::HeteroStringMap<std::shared_ptr<Texture>> textures_;
 
+		std::string currentTexturePath_;
 		std::shared_ptr<Texture> texture_ = nullptr;
     };
 } // namespace Lunatic

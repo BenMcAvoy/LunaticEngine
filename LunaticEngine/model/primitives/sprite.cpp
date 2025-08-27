@@ -16,6 +16,7 @@ const std::array<Vertex, 4> vertices = {
 const GLuint indices[] = { 0, 1, 2, 2, 3, 0 };
 
 Sprite::Sprite(const std::string_view name) : Instance(name), Renderable() {
+	reflect();
 	metaType = entt::resolve<Sprite>();
 
 	if (!dataInitialized_) {
@@ -42,6 +43,7 @@ Sprite::Sprite(const std::string_view name) : Instance(name), Renderable() {
 bool Sprite::setTexture(std::string_view path) {
 	auto it = textures_.find(path);
 	if (it != textures_.end()) {
+		currentTexturePath_ = path;
 		texture_ = it->second;
 		return true;
 	}
@@ -51,8 +53,10 @@ bool Sprite::setTexture(std::string_view path) {
 		return false;
 	}
 
+	currentTexturePath_ = path;
 	textures_.emplace(std::string(path), texture);
 	texture_ = texture;
+	return true;
 }
 
 void Sprite::draw(Shader& shader) {

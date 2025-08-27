@@ -16,6 +16,7 @@ Camera::Camera(std::string_view name) : Instance(name) {
 	farPlane_ = 1.0f;
 	update();
 
+	reflect();
 	metaType = entt::resolve<Camera>();
 
 	Engine::getInstance().registerMainCamera(this);

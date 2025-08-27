@@ -11,6 +11,8 @@ namespace Lunatic {
 		std::weak_ptr<Instance> parent_;
 		std::vector<std::shared_ptr<Instance>> children_;
 
+		virtual void reflect();
+
 	public:
 		explicit Instance(const std::string_view name);
 		virtual ~Instance() = default;
@@ -55,6 +57,8 @@ namespace Lunatic {
 		Renderable(); // Registers the Renderable* to the renderer
 		~Renderable(); // Unregisters the Renderable* from the renderer
 
+		void reflect();
+
 		virtual void draw(Shader& shader) = 0;
 	};
 
@@ -62,6 +66,8 @@ namespace Lunatic {
 	public:
 		Updateable(); // Registers the Updateable* to the renderer
 		~Updateable(); // Unregisters the Updateable* from the renderer
+
+		void reflect();
 
 		virtual void update() = 0;
 	};

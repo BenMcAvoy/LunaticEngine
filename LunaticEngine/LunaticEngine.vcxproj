@@ -164,7 +164,6 @@
     <ClInclude Include="core\utils.h" />
     <ClInclude Include="model\primitives\camera.h" />
     <ClInclude Include="model\primitives\nativescript.h" />
-    <ClInclude Include="model\reflection.h" />
     <ClInclude Include="model\base.h" />
     <ClInclude Include="model\primitives\script.h" />
     <ClInclude Include="model\primitives\sprite.h" />

@@ -18,7 +18,10 @@ namespace Lunatic {
 			func_ = func;
 		}
 		
-		virtual void update() override;
+		void update() override;
+
+	protected:
+		void reflect() override;
 
 	private:
 		std::function<void(std::shared_ptr<NativeScript>)> func_;

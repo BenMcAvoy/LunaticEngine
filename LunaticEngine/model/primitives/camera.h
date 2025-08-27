@@ -22,6 +22,9 @@ namespace Lunatic {
 			return "Camera";
 		}
 
+	protected:
+        void reflect() override;
+
 	private:
 		void draw(Shader& shader) override { /* No-op */ }
 

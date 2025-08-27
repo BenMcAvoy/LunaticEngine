@@ -2,13 +2,15 @@
 
 #include "script.h"
 
-#include "model/reflection.h"
-
 #include "core/engine.h"
+
+#include "model/primitives/sprite.h"
+#include "model/primitives/script.h"
 
 using namespace Lunatic;
 
 Script::Script(std::string_view name) : Instance(name), Updateable() {
+	reflect();
 	metaType = entt::resolve<Script>();
 }
 

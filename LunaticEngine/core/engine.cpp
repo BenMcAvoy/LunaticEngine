@@ -3,8 +3,6 @@
 #include "engine.h"
 #include "render/renderer.h"
 
-#include "model/reflection.h"
-
 using namespace Lunatic;
 
 Engine& Engine::getInstance() {
@@ -149,10 +147,8 @@ Engine::Engine() {
 
 	glViewport(0, 0, 800, 600);
 
-	std::println("Lunatic Engine initialized successfully");
-    initReflection();
-
 	rootInstance = std::make_shared<Instance>("Root");
+	std::println("Lunatic Engine initialized successfully");
 }
 
 void Engine::run() {

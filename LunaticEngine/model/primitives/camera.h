@@ -15,16 +15,17 @@ namespace Lunatic {
 		void use(Shader& shader);
 		void resize(int width, int height);
 
-		glm::vec2 screenToWorld(const glm::vec2& screenPos);
-		glm::vec2 worldToScreen(const glm::vec2& worldPos);
+		glm::vec2 screenToWorld(glm::vec2 screenPos);
+		glm::vec2 worldToScreen(glm::vec2 worldPos);
 
 		virtual std::string_view getClassName() const override {
 			return "Camera";
 		}
 
-	protected:
-        void reflect() override;
+		friend class rttr::registration::class_<Camera>; 
 
+		RTTR_ENABLE(Instance, Renderable);
+		RTTR_REGISTRATION_FRIEND
 	private:
 		void draw(Shader& shader) override { /* No-op */ }
 

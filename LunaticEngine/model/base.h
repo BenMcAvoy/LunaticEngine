@@ -11,13 +11,11 @@ namespace Lunatic {
 		std::weak_ptr<Instance> parent_;
 		std::vector<std::shared_ptr<Instance>> children_;
 
-		virtual void reflect();
-
 	public:
 		explicit Instance(const std::string_view name);
 		virtual ~Instance() = default;
 
-		entt::meta_type metaType;
+		rttr::type typeInfo;
 
 		std::string_view getName() const;
 		void setName(std::string_view name);
@@ -29,12 +27,16 @@ namespace Lunatic {
 		std::shared_ptr<Instance> findChildByName(std::string_view name) const;
 
 		bool isA(std::string_view className) const {
-			auto type = entt::resolve(entt::hashed_string{ className.data() });
-			return type == metaType;
+			rttr::type other = rttr::type::get_by_name(className.data());
+			return typeInfo.is_derived_from(other);
 		}
 
 		virtual std::string_view getClassName() const;
 		virtual void onAncestorChanged() { /* No-op by default, not always needed */ }
+
+		RTTR_ENABLE();
+
+		friend class rttr::registration::class_<Instance>; 
 	};
 
 	class Renderable {
@@ -57,9 +59,10 @@ namespace Lunatic {
 		Renderable(); // Registers the Renderable* to the renderer
 		~Renderable(); // Unregisters the Renderable* from the renderer
 
-		void reflect();
-
 		virtual void draw(Shader& shader) = 0;
+
+		RTTR_ENABLE();
+		friend class rttr::registration::class_<Renderable>; 
 	};
 
 	class Updateable {
@@ -70,5 +73,8 @@ namespace Lunatic {
 		void reflect();
 
 		virtual void update() = 0;
+
+		RTTR_ENABLE();
+		friend class rttr::registration::class_<Updateable>; 
 	};
 } // namespace Lunatic

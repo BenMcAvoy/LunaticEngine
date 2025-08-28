@@ -5,9 +5,46 @@
 #include "primitives/camera.h"
 #include "primitives/nativescript.h"
 
-using namespace Lunatic;
-using namespace entt::literals;
+extern "C" void _force_link_anchor() {}
 
+RTTR_REGISTRATION{
+rttr::registration::class_<Lunatic::Instance>("Instance")
+.property("name", &Lunatic::Instance::getName, &Lunatic::Instance::setName)
+.property("parent", &Lunatic::Instance::getParent, &Lunatic::Instance::setParent)
+.property_readonly("children", &Lunatic::Instance::getChildren)
+.property_readonly("className", &Lunatic::Instance::getClassName)
+.method("findChildByName", &Lunatic::Instance::findChildByName)
+.method("getChildren", &Lunatic::Instance::getChildren)
+.method("isA", &Lunatic::Instance::isA);
+
+rttr::registration::class_<Lunatic::Renderable>("Renderable")
+.property("position", &Lunatic::Renderable::getPosition, &Lunatic::Renderable::setPosition)
+.property("scale", &Lunatic::Renderable::getScale, &Lunatic::Renderable::setScale)
+.property("color", &Lunatic::Renderable::getColor, &Lunatic::Renderable::setColor);
+
+rttr::registration::class_<Lunatic::Updateable>("Updateable"); // Nothing should be reflected here
+
+rttr::registration::class_<Lunatic::Sprite>("Sprite")
+.property("texturePath", &Lunatic::Sprite::getTexturePath, &Lunatic::Sprite::setTexture)
+.method("clearTexture", &Lunatic::Sprite::clearTexture);
+
+rttr::registration::class_<Lunatic::Script>("Script")
+.property_readonly("codePath", &Lunatic::Script::codePath_);
+
+rttr::registration::class_<Lunatic::NativeScript>("NativeScript"); // Nothing should be reflected here
+
+rttr::registration::class_<Lunatic::Camera>("Camera")
+.property_readonly("viewportSize", &Lunatic::Camera::viewportSize_)
+.property("position", &Lunatic::Camera::getPosition, &Lunatic::Camera::setPosition)
+.property("rotation", &Lunatic::Camera::rotation_)
+.property_readonly("zoom", &Lunatic::Camera::zoom_)
+.property_readonly("nearPlane", &Lunatic::Camera::nearPlane_)
+.property_readonly("farPlane", &Lunatic::Camera::farPlane_)
+.method("screenToWorld", &Lunatic::Camera::screenToWorld)
+.method("worldToScreen", &Lunatic::Camera::worldToScreen);
+}
+
+/*
 void Renderable::reflect() {
     entt::meta_factory<Renderable>()
         .type("Renderable"_hs)
@@ -86,3 +123,4 @@ void Camera::reflect() {
         .data<&Camera::nearPlane_>("nearPlane"_hs)
         .data<&Camera::farPlane_>("farPlane"_hs);
 }
+*/

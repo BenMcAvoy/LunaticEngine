@@ -16,8 +16,7 @@ Camera::Camera(std::string_view name) : Instance(name) {
 	farPlane_ = 1.0f;
 	update();
 
-	reflect();
-	metaType = entt::resolve<Camera>();
+	typeInfo = rttr::type::get<Camera>();
 
 	Engine::getInstance().registerMainCamera(this);
 }
@@ -53,7 +52,7 @@ void Camera::resize(int width, int height) {
 	viewportSize_ = { static_cast<float>(width), static_cast<float>(height) };
 }
 
-glm::vec2 Camera::screenToWorld(const glm::vec2& screenPos) {
+glm::vec2 Camera::screenToWorld(glm::vec2 screenPos) {
 	// Convert screen coordinates (0,0 at top-left) to normalized device coordinates (-1 to 1)
 	float x = (2.0f * screenPos.x) / viewportSize_.x - 1.0f;
 	float y = 1.0f - (2.0f * screenPos.y) / viewportSize_.y; // Invert Y for OpenGL
@@ -68,7 +67,7 @@ glm::vec2 Camera::screenToWorld(const glm::vec2& screenPos) {
 	return glm::vec2(worldPos);
 }
 
-glm::vec2 Camera::worldToScreen(const glm::vec2& worldPos) {
+glm::vec2 Camera::worldToScreen(glm::vec2 worldPos) {
 	// Transform world coordinates to clip space
 	glm::vec4 clipSpacePos = projection_ * view_ * glm::vec4(worldPos, 0.0f, 1.0f);
 	if (clipSpacePos.w != 0.0f) {

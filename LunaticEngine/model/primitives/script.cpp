@@ -10,152 +10,133 @@
 using namespace Lunatic;
 
 Script::Script(std::string_view name) : Instance(name), Updateable() {
-	reflect();
-	metaType = entt::resolve<Script>();
+    typeInfo = rttr::type::get<Script>();
 }
 
-//#define REFLECTION_DBG
-
-entt::meta_any luaToENTT(sol::object obj) {
+rttr::variant solToRTTR(sol::object obj) {
     auto type = obj.get_type();
-#ifdef REFLECTION_DBG
-    std::println("[reflec] luaToENTT({})", (int)type);
-#endif
+
     switch (type) {
-        case sol::type::number:
-            return entt::meta_any(obj.as<double>());
-        case sol::type::string:
-            return entt::meta_any(obj.as<std::string_view>());
-        case sol::type::boolean:
-            return entt::meta_any(obj.as<bool>());
-        case sol::type::table: {
-			auto table = obj.as<sol::table>();
-			std::println("[reflection] luaToENTT: converting table of size {}", table.size());
-
-			// if there are 2 paramers, assume glm::vec2
-            if (table.size() == 2) {
-                glm::vec2 v;
-                v.x = table[1].get_or(0.0f);
-                v.y = table[2].get_or(0.0f);
-				return entt::meta_any(v);
-            }
-            else {
-				std::println("[reflection] luaToENTT: table size is not 2, cannot convert to glm::vec2 (size = {})", table.size());
-            }
-
-            // Handle table conversion if needed
-            return entt::meta_any(obj.as<sol::table>());
-        }
-        default: {
-            if (type == sol::type::userdata) {
-                if (obj.is<glm::vec2>()) {
-                    glm::vec2 vec2 = obj.as<glm::vec2>();
-                    return entt::meta_any(vec2);
-				}
-				else if (obj.is<glm::vec4>()) {
-					glm::vec4 vec4 = obj.as<glm::vec4>();
-					return entt::meta_any(vec4);
-				}
-				else if (obj.is<std::shared_ptr<Instance>>()) {
-					auto instancePtr = obj.as<std::shared_ptr<Instance>>();
-					return entt::meta_any(instancePtr);
-				}
-				else if (obj.is<std::shared_ptr<Script>>()) {
-					auto scriptPtr = obj.as<std::shared_ptr<Script>>();
-					return entt::meta_any(scriptPtr);
-				}
-				else if (obj.is<std::shared_ptr<Sprite>>()) {
-					auto spritePtr = obj.as<std::shared_ptr<Sprite>>();
-					return entt::meta_any(spritePtr);
-				}
-				else if (obj.is<std::shared_ptr<Camera>>()) {
-					auto cameraPtr = obj.as<std::shared_ptr<Camera>>();
-					return entt::meta_any(cameraPtr);
-				}
-			}
-
-			std::println("[reflection] luaToENTT: unsupported type for conversion. type = {}", (int)type);
-            return entt::meta_any();
-        }
-	}
-}
-
-sol::object enttToLua(sol::state_view ts, const entt::meta_any& any) {
-    if (!any) {
-		std::println("[reflection] enttToLua: any is null, either void or failed call (likely failed call)");
-        return sol::make_object(ts, sol::nil);
-    }
-
-    // Example for some basic types
-    if (any.type() == entt::resolve<int>()) {
-        return sol::make_object(ts, any.cast<int>());
-    } 
-    else if (any.type() == entt::resolve<double>()) {
-        return sol::make_object(ts, any.cast<double>());
-    } 
-    else if (any.type() == entt::resolve<std::string>()) {
-        return sol::make_object(ts, any.cast<std::string>());
-    }
-    else if (any.type() == entt::resolve<std::string_view>()) {
-		return sol::make_object(ts, std::string(any.cast<std::string_view>()));
-    }
-    else if (any.type() == entt::resolve<bool>()) {
-        return sol::make_object(ts, any.cast<bool>());
-	}
-    else if (any.type().info().name() == entt::resolve<std::shared_ptr<Instance>>().info().name()) {
-        auto sp = any.cast<std::shared_ptr<Instance>>();
-		return sol::make_object(ts, sp);
-    }
-    else if (any.type().info().name() == entt::resolve<glm::vec2>().info().name()) {
-		return sol::make_object(ts, any.cast<glm::vec2>());
-	}
-    else if (any.type().info().name() == entt::resolve<glm::vec4>().info().name()) {
-        return sol::make_object(ts, any.cast<glm::vec4>());
-    }
-    else if (any.type() == entt::resolve<void>()) {
-        return sol::make_object(ts, sol::nil);
-	}
-    // std::vector support (especially for std::vector<std::shared_ptr<Instance>>)
-    else if (any.type().info().name() == entt::resolve<std::vector<std::shared_ptr<Instance>>>().info().name()) {
-        auto vec = any.cast<std::vector<std::shared_ptr<Instance>>>();
-        sol::table tbl = ts.create_table(static_cast<int>(vec.size()), 0);
-        for (size_t i = 0; i < vec.size(); ++i) {
-            tbl[i + 1] = vec[i]; // Lua is 1-indexed
-        }
-        return tbl;
-	}
-    else {
-		std::println("[reflection] enttToLua: unsupported type for conversion. type = {}", any.type().info().name());
-        return sol::make_object(ts, any);
-    }
-}
-
-template<typename T>
-entt::meta_any callMethod(std::shared_ptr<Instance> instance, std::string_view methodName, std::vector<entt::meta_any> args) {
-	entt::meta_type& mt = instance->metaType;
-
-    entt::meta_func mf = mt.func(entt::hashed_string{ methodName.data() });
-    if (!mf) {
-        std::println("[reflection] callMethod: method '{}' not found in type '{}'", methodName, mt.info().name());
+    case sol::type::none:
+    case sol::type::lua_nil:
         return {};
-    }
-
-	T& tRef = *reinterpret_cast<T*>(instance.get());
-
-	entt::meta_any result;
-    if (args.empty()) {
-        result = mf.invoke(tRef);
-    } else {
-        result = mf.invoke(tRef, args.data(), args.size());
-    }
-    if (!result) {
-        std::println("[reflection] callMethod: invocation failed for method '{}' on type '{}'", methodName, mt.info().name());
+    case sol::type::string:
+        return obj.as<std::string_view>();
+    case sol::type::number:
+        spdlog::warn("Tried to parse a number... none");
         return {};
-    }
-	return result;
+    case sol::type::thread:
+        spdlog::warn("Tried to parse a thread... none");
+        return {};
+    case sol::type::boolean:
+        return obj.as<bool>();
+    case sol::type::function:
+        spdlog::warn("Tried to parse a function... none");
+        return {};
+    case sol::type::userdata:
+        if (obj.is<glm::vec2>()) {
+            auto& vec2 = obj.as<glm::vec2>();
+            return vec2;
+        }
+        else if (obj.is<glm::vec4>()) {
+            return obj.as<glm::vec4>();
+        }
+        else {
+            spdlog::warn("Tried to parse an unknown userdata... none");
+            return {};
+        }
+    case sol::type::lightuserdata:
+        spdlog::warn("Tried to parse a lightuserdata... none");
+        return {};
+    case sol::type::table:
+        spdlog::warn("Tried to parse a table... none");
+        return {};
+    case sol::type::poly:
+        spdlog::warn("Tried to parse poly... none");
+        return {};
+    default:
+        spdlog::warn("Tried to parse unknown type... none");
+        return {};
+    };
 }
 
-void Script::loadCode(std::string_view code) {
+sol::object rttrToSol(sol::state_view lua, const rttr::variant& var, std::string_view context) {
+	if (!var.is_valid() || var.is_type<void>())
+        return sol::nil;
+
+    rttr::type t = var.get_type();
+
+    if (t == rttr::type::get<int>())
+        return sol::make_object(lua, var.to_int());
+    else if (t == rttr::type::get<double>())
+        return sol::make_object(lua, var.to_double());
+    else if (t == rttr::type::get<float>())
+        return sol::make_object(lua, static_cast<float>(var.to_double()));
+    else if (t == rttr::type::get<bool>())
+        return sol::make_object(lua, var.to_bool());
+    else if (t == rttr::type::get<std::string>())
+        return sol::make_object(lua, var.to_string());
+    else if (t.is_pointer() || t.is_class())
+    {
+		// if it's a ptr to a Lunatic::Instance return as shared_ptr
+        if (t == rttr::type::get<std::shared_ptr<Instance>>()) {
+            auto& sp = var.get_value<std::shared_ptr<Instance>>();
+            if (sp)
+                return sol::make_object(lua, sp);
+            else
+                return sol::nil;
+		}
+
+		// if its a vec<shrdptr<Instance>>
+        if (t == rttr::type::get<std::vector<std::shared_ptr<Instance>>>()) {
+            auto& vec = var.get_value<std::vector<std::shared_ptr<Instance>>>();
+			// Create a Lua table
+			sol::table luaTable = lua.create_table(static_cast<int>(vec.size()), 0);
+            for (size_t i = 0; i < vec.size(); ++i) {
+                if (vec[i]) {
+                    luaTable[i + 1] = vec[i]; // Lua tables are 1-indexed
+                }
+                else {
+                    luaTable[i + 1] = sol::nil;
+                }
+            }
+
+			return luaTable;
+        }
+
+        // glm::vec2
+        if (t == rttr::type::get<glm::vec2>()) {
+            auto& vec = var.get_value<glm::vec2>();
+            return sol::make_object(lua, vec);
+		}
+
+		// glm::vec4
+        if (t == rttr::type::get<glm::vec4>()) {
+            auto& vec = var.get_value<glm::vec4>();
+            return sol::make_object(lua, vec);
+		}
+
+		// if it's a std::string_view
+        if (t == rttr::type::get<std::string_view>()) {
+            auto& sv = var.get_value<std::string_view>();
+            return sol::make_object(lua, sv);
+		}
+
+        spdlog::warn("ptr/class");
+        // For user-defined types, push the raw pointer (or wrap in shared_ptr)
+        // todo: proper
+        void* ptr = var.get_value<void*>();
+        if (ptr)
+            return sol::make_object(lua, ptr);
+        else
+            return sol::nil;
+    }
+
+	spdlog::warn("nil, type was {} whilst calling {}", t.get_name().to_string(), context);
+    return sol::nil; // fallback
+}
+
+void Script::loadCode(std::string_view path) {
     coroutine_ = sol::coroutine();
     env_ = sol::environment();
     finished_ = false;
@@ -165,53 +146,103 @@ void Script::loadCode(std::string_view code) {
 			sol::lib::math, sol::lib::table, sol::lib::coroutine, sol::lib::os);
 
         lua_.set_function("print", [](const std::string& msg) {
-            std::println("Lua: {}", msg);
+            spdlog::info("[LUA] {}", msg);
             });
 
         auto indexFunc = [](sol::this_state ts, Instance& inst, std::string_view key) -> sol::object {
             auto ss = inst.shared_from_this();
             if (!ss) return sol::nil;
 
-            auto thunk = [ss, key](sol::variadic_args sVA) -> sol::object {
-                static auto scriptMetaType = entt::resolve<Script>();
-                static auto spriteMetaType = entt::resolve<Sprite>();
-				static auto cameraMetaType = entt::resolve<Camera>();
-				static auto instanceMetaType = entt::resolve<Instance>();
+            rttr::type& t = inst.typeInfo;
+            rttr::variant obj = std::ref(inst);
 
-				static std::vector<entt::meta_any> args;
-                args.clear();
+            auto prop = t.get_property(key.data());
 
-				auto begin = sVA.begin();
-				begin++; // skip first arg (self)
-				for (auto it = begin; it != sVA.end(); ++it) {
-					args.emplace_back(luaToENTT(*it));
-				}
-
-                if (ss->metaType == instanceMetaType) {
-                    auto res = callMethod<Instance>(ss, key, args);
-                    return enttToLua(sVA.lua_state(), res);
+            if (prop.is_valid()) {
+                auto var = prop.get_value(obj);
+                if (!var.is_valid()) {
+                    spdlog::warn("Invalid variant");
+                    return {};
                 }
-                else if (ss->metaType == scriptMetaType) {
-					auto res = callMethod<Script>(ss, key, args);
-					return enttToLua(sVA.lua_state(), res);
-                }
-                else if (ss->metaType == spriteMetaType) {
-					auto res = callMethod<Sprite>(ss, key, args);
-					return enttToLua(sVA.lua_state(), res);
-				}
-				else if (ss->metaType == cameraMetaType) {
-					auto res = callMethod<Camera>(ss, key, args);
-					return enttToLua(sVA.lua_state(), res);
-                }
+				return rttrToSol(ts, var, key);
+            }
+            else {
+                // Not a property, check for method
+                auto method = t.get_method(key.data());
+                if (method.is_valid()) {
+                    auto thunk = [method, obj](sol::this_state ts, sol::variadic_args va) -> sol::object {
+                        auto it = va.begin();
+                        auto end = va.end();
+                        if (it == end) return sol::make_object(ts, sol::nil);
+                        ++it; // skip first
+                        size_t arg_count = 0;
+                        for (auto tmp = it; tmp != end; ++tmp) ++arg_count;
 
-				//std::println("[reflection] Unimplemented cast to type {} (was looking for method '{}')", ss->metaType.info().name(), key);
-                return sol::nil;
-                };
-            return sol::make_object(ts, thunk);
+                        std::vector<rttr::argument> args;
+                        args.reserve(arg_count);
+
+                        std::vector<std::string> strs;
+                        strs.reserve(arg_count);
+
+                        for (; it != end; ++it) {
+                            if (it->is<std::string_view>()) {
+                                //strs.emplace_back(it->as<std::string>());
+
+								std::string str = it->as<std::string>();
+								spdlog::trace("Pushed string arg: {}", str);
+								strs.emplace_back(std::move(str));
+
+                                args.emplace_back(std::string_view(strs.back()));
+                            }
+                            else {
+                                auto res = solToRTTR(*it);
+                                if (!res.is_valid()) {
+                                    spdlog::warn("Invalid argument variant");
+                                    return sol::make_object(ts, sol::nil);
+								}
+								args.emplace_back(res);
+                            }
+                        }
+
+                        auto ret = method.invoke_variadic(obj, args);
+                        if (!ret.is_valid()) return sol::make_object(ts, sol::nil);
+
+						return rttrToSol(ts, ret, method.get_name().to_string());
+                        };
+                    return sol::make_object(ts, thunk);
+                }
+                else {
+                    spdlog::warn("No property or method named '{}' in type '{}'", key, t.get_name().to_string());
+                    return {};
+                }
+            }
             };
 
+        auto newIndexFunc = [](sol::this_state ts, Instance& inst, std::string_view key, sol::object value) {
+            auto ss = inst.shared_from_this();
+            if (!ss) return;
+            rttr::type& t = inst.typeInfo;
+            rttr::variant obj = std::ref(inst);
+            auto prop = t.get_property(key.data());
+            if (prop.is_valid()) {
+                rttr::variant var = solToRTTR(value);
+                if (!var.is_valid()) {
+                    spdlog::warn("Invalid variant");
+                    return;
+                }
+                bool success = prop.set_value(obj, var);
+                if (!success) {
+                    spdlog::warn("Failed to set property '{}'", key);
+                }
+            }
+            else {
+                spdlog::warn("No property named '{}' in type '{}'", key, t.get_name().to_string());
+            }
+			};
+
         lua_.new_usertype<Instance>("Instance",
-            sol::meta_function::index, indexFunc
+            sol::meta_function::index, indexFunc,
+			sol::meta_function::new_index, newIndexFunc
         );
 
         // Bind Engine type (directly, no meta)
@@ -248,10 +279,19 @@ void Script::loadCode(std::string_view code) {
         luaInit_ = true;
     }
 
-    sol::load_result lr = lua_.load(code);
+	std::ifstream file(path.data());
+    if (!file.is_open()) {
+        spdlog::error("Failed to open script file: {}", path);
+        return;
+	}
+	codePath_ = path;
+    std::string code((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+	file.close();
+
+    sol::load_result lr = lua_.load(code, path.data());
     if (!lr.valid()) {
         sol::error err = lr;
-        std::println("Lua load error in script {}: {}", getName(), err.what());
+        spdlog::error("Lua load error in script {}: {}", getName(), err.what());
         return;
     }
 
@@ -273,13 +313,19 @@ void Script::loadCode(std::string_view code) {
     // Build the coroutine from the thread's function
     coroutine_ = sol::coroutine(cofn);
 
-    code_ = std::string(code);
-
     finished_ = false;
 }
 
+void Script::reloadCode() {
+    if (codePath_.empty()) {
+        spdlog::warn("No code path set for script {}, cannot reload", getName());
+        return;
+    }
+    loadCode(codePath_.string());
+}
+
 void Script::update() {
-	if (code_.empty() || finished_) {
+	if (codePath_.empty() || finished_) {
 		return; // No code to execute
 	}
 
@@ -293,7 +339,7 @@ void Script::update() {
 
 	if (!result.valid()) {
 		sol::error err = result;
-		std::println("Lua error in script {}: {}", getName(), err.what());
+		spdlog::error("Lua error in script {}: {}", getName(), err.what());
 		return;
 	}
 

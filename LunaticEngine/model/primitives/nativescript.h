@@ -20,9 +20,8 @@ namespace Lunatic {
 		
 		void update() override;
 
-	protected:
-		void reflect() override;
-
+		RTTR_ENABLE(Instance, Updateable);
+		RTTR_REGISTRATION_FRIEND;
 	private:
 		std::function<void(std::shared_ptr<NativeScript>)> func_;
 	};

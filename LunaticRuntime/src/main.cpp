@@ -6,7 +6,7 @@
 #include "model/primitives/camera.h"
 #include "model/primitives/nativescript.h"
 
-#include "model/reflection.h"
+#include <iostream>
 
 template <typename T>
 std::shared_ptr<T> AddObjectTo(std::string name, std::shared_ptr<Lunatic::Instance> parent) {
@@ -16,134 +16,56 @@ std::shared_ptr<T> AddObjectTo(std::string name, std::shared_ptr<Lunatic::Instan
 }
 
 int main(int argc, char** argv) {
+	std::cout << "\033[2J\033[H"; // Clear screen and move cursor to home position
+
+	spdlog::set_level(spdlog::level::trace);
+
 	Lunatic::Engine& engine = Lunatic::Engine::getInstance();
-	auto rootInstance = engine.rootInstance;
+	auto& rootInstance = engine.rootInstance;
 
 	auto camera = AddObjectTo<Lunatic::Camera>("MainCamera", engine.rootInstance);
 
-	auto bg = AddObjectTo<Lunatic::Sprite>("Background", engine.rootInstance);
-	bg->setScale({ 4.0f, 4.0f });
-	bg->setTexture("paper.png");
+	auto background = AddObjectTo<Lunatic::Sprite>("Background", rootInstance);
+	background->setTexture("paper.png");
+	background->setPosition({ 0.0f, 0.0f });
+	background->setScale({ 4.0f, 4.0f });
 
-	// Create 3x3 grid of sprites, (1, 1) being in the middle, (0, 0) bottom-left, (2, 2) top-right
-	auto boardFolder = AddObjectTo<Lunatic::Instance>("Board", engine.rootInstance);
+	auto board = AddObjectTo<Lunatic::Instance>("Board", rootInstance);
 	for (int x = 0; x < 3; x++) {
 		for (int y = 0; y < 3; y++) {
-			auto sprite = AddObjectTo<Lunatic::Sprite>("Sprite_" + std::to_string(x+1) + "_" + std::to_string(y+1), boardFolder);
+			auto sprite = AddObjectTo<Lunatic::Sprite>("Cell_" + std::to_string(x + 1) + "_" + std::to_string(y + 1), board);
 			sprite->setPosition({ (x - 1) * 0.6f, (y - 1) * 0.6f });
 			sprite->setScale({ 0.5f, 0.5f });
-			sprite->setColor({ 0.0, 0.0, 0.0, 0.0 });
+			sprite->setColor({ 0.0, 0.0, 0.0, 0.1 });
 		}
 	}
 
-	// Load script from `./board.lua`
-	auto script = AddObjectTo<Lunatic::Script>("BoardScript", boardFolder);
-	auto scriptFile = std::ifstream("board.lua");
-	if (scriptFile.is_open()) {
-		std::string code((std::istreambuf_iterator<char>(scriptFile)), std::istreambuf_iterator<char>());
-		script->loadCode(code);
-		scriptFile.close();
-	}
-	else {
-		std::println("Failed to open board.lua");
-	}
+	auto script = AddObjectTo<Lunatic::Script>("GameLogic", board);
+	script->loadCode("game.lua");
 
-	auto nativeScript = AddObjectTo<Lunatic::NativeScript>("BoardNativeScript", boardFolder);
-	nativeScript->setFunction([](std::shared_ptr<Lunatic::NativeScript> ns) {
-		// We try to reload the code of the board script, so we can edit it live
-		static auto script = std::dynamic_pointer_cast<Lunatic::Script>(ns->getParent()->findChildByName("BoardScript"));
-		if (!script) return;
+	// ========================== //
 
-		static auto lastWriteTime = std::filesystem::file_time_type::min();
-		auto currentWriteTime = std::filesystem::last_write_time("board.lua");
+	auto cursor = AddObjectTo<Lunatic::Sprite>("Cursor", rootInstance);
+	cursor->setScale({ 0.4f, 0.4f });
+	auto cursorScript = AddObjectTo<Lunatic::Script>("CursorScript", cursor);
+	cursorScript->loadCode("cursor.lua");
 
-		if (currentWriteTime != lastWriteTime) {
-			std::println("Reloading board.lua");
-			auto scriptFile = std::ifstream("board.lua");
-			if (scriptFile.is_open()) {
-				std::string code((std::istreambuf_iterator<char>(scriptFile)), std::istreambuf_iterator<char>());
-				script->loadCode(code);
-				scriptFile.close();
-				lastWriteTime = currentWriteTime;
+	// ========================== //
+
+	auto reloader = AddObjectTo<Lunatic::NativeScript>("Reloader", rootInstance);
+	reloader->setFunction([&](std::shared_ptr<Lunatic::NativeScript> self) {
+		if (engine.getKeyState(GLFW_KEY_R) == Lunatic::KeyAction::Pressed) {
+			spdlog::info("Reloading scripts...");
+			auto script = rootInstance->findChildByName("Board")->findChildByName("GameLogic");
+			if (script && script->isA("Script")) {
+				std::dynamic_pointer_cast<Lunatic::Script>(script)->reloadCode();
 			}
-			else {
-				std::println("Failed to open board.lua");
+			auto cursor = rootInstance->findChildByName("Cursor")->findChildByName("CursorScript");
+			if (cursor && cursor->isA("Script")) {
+				std::dynamic_pointer_cast<Lunatic::Script>(cursor)->reloadCode();
 			}
 		}
 		});
-
-	auto cursor = AddObjectTo<Lunatic::Sprite>("Cursor", engine.rootInstance);
-	cursor->setScale({ 0.3f, 0.3f });
-	cursor->setTexture("cursor1.png");
-	auto cursorScript = AddObjectTo<Lunatic::Script>("CursorScript", cursor);
-	cursorScript->loadCode(R"(
-		local camera = root:findChildByName("MainCamera")
-		local sprite = script:getParent()
-		local mousePos, worldPos
-		local i = 0
-
-		while true do
-			engine:hideCursor()
-			i = i + 1
-			if i % 10 == 0 then
-				local texIndex = math.floor(i / 10) % 3 + 1
-				sprite:setTexture("cursor" .. texIndex .. ".png")
-			end
-
-			mousePos = engine:getMousePos()
-			worldPos = camera:screenToWorld(mousePos)
-			sprite:setPosition(worldPos)
-			yield()
-		end
-	)");
-
-	/*auto sprite = AddObjectTo<Lunatic::Sprite>("ChildSprite", engine.rootInstance);
-	auto script = AddObjectTo<Lunatic::Script>("TestScript", sprite);
-
-	script->loadCode(R"(
-		local camera = root:findChildByName("MainCamera")
-		local sprite = script:getParent()
-		local mousePos, worldPos
-
-		while true do
-			mousePos = engine:getMousePos()
-			worldPos = camera:screenToWorld(mousePos)
-
-			sprite:setPosition(worldPos)
-			yield()
-		end
-	)");
-
-	/*script->loadCode(R"(
-		local camera = root:findChildByName("MainCamera")
-		local sprite = script:getParent()
-
-		while true do
-			local w = engine:getKeyState(87) -- W
-			local a = engine:getKeyState(65) -- A
-			local s = engine:getKeyState(83) -- S
-			local d = engine:getKeyState(68) -- D
-
-			local x = d - a
-			local y = w - s
-			local pos = sprite:getPosition()
-			sprite:setPosition(vec2.new(pos.x + x * 0.016, pos.y + y * 0.016))
-
-			yield()
-		end
-	)");*/
-
-	// Reimplementation of the above ^^
-	/*auto nativeScript = AddObjectTo<Lunatic::NativeScript>("NativeScript", sprite);
-	nativeScript->setFunction([&engine, rootInstance](std::shared_ptr<Lunatic::NativeScript> ns) {
-		static auto camera = std::dynamic_pointer_cast<Lunatic::Camera>(rootInstance->findChildByName("MainCamera"));
-		static auto sprite = std::dynamic_pointer_cast<Lunatic::Sprite>(ns->getParent());
-		if (!camera || !sprite) return;
-
-		glm::vec2 mousePos = engine.getMousePos();
-		glm::vec2 worldPos = camera->screenToWorld(mousePos);
-		sprite->setPosition(worldPos);
-		});*/
 
 	engine.run();
 	return 0;

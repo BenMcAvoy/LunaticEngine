@@ -67,6 +67,9 @@ void renderStats(float dt, int renderableCount) {
     ImGui::Separator();
     ImGui::Text("Current Frame Time: %.2f ms", frameTimeMs);
     ImGui::Text("Current FPS: %.1f", fps);
+	ImGui::Text("Average Frame Time: %.2f ms", std::accumulate(frameTimes.data(), frameTimes.data() + frameTimes.size(), 0.0f) / frameTimes.size());
+	ImGui::Text("Average FPS: %.1f", std::accumulate(fpsValues.data(), fpsValues.data() + fpsValues.size(), 0.0f) / fpsValues.size());
+	ImGui::Text("Average FPS (imgui reports): %.1f", ImGui::GetIO().Framerate);
 	ImGui::Text("Instance Count: %d", renderableCount);
 
 	ImGui::Separator();
@@ -82,14 +85,16 @@ void renderStats(float dt, int renderableCount) {
 
 Engine::Engine() {
 	if (!glfwInit()) {
-		std::println("Failed to initialize GLFW");
+		const char* description;
+		int code = glfwGetError(&description);
+		spdlog::critical("Failed to init GLFW: {}", description);
 		return;
 	}
 
 	glfwSetErrorCallback(winErrorCallback);
 	glfwWindow_ = glfwCreateWindow(800, 600, "Lunatic Engine", nullptr, nullptr);
 	if (!glfwWindow_) {
-		std::println("Failed to create GLFW window");
+		spdlog::critical("Failed to create GLFW window");
 		glfwTerminate();
 		return;
 	}
@@ -98,7 +103,7 @@ Engine::Engine() {
 	glfwSwapInterval(1);
 
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
-		std::println("Failed to initialize GLAD");
+		spdlog::critical("Failed to initialize GLAD");
 		glfwDestroyWindow(glfwWindow_);
 		glfwTerminate();
 		return;
@@ -139,7 +144,7 @@ Engine::Engine() {
 		io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\Arial.ttf", 16.0f);
 		io.Fonts->Build();
 	} else {
-		std::println("Arial font not found, using default font");
+		spdlog::warn("Arial font not found, using default font");
 	}
 
 	ImGui_ImplGlfw_InitForOpenGL(glfwWindow_, true);
@@ -147,8 +152,8 @@ Engine::Engine() {
 
 	glViewport(0, 0, 800, 600);
 
-	rootInstance = std::make_shared<Instance>("Root");
-	std::println("Lunatic Engine initialized successfully");
+	rootInstance = std::make_shared<Instance>("rootInstance");
+	spdlog::info("Lunatic Engine initialized successfully");
 }
 
 void Engine::run() {
@@ -272,23 +277,129 @@ void Engine::run() {
 					sel->setName(inspectorNameBuffer_);
 				}
 
-				// Renderable details (if applicable)
-				if (auto asRenderable = dynamic_cast<Renderable*>(sel.get())) {
-					ImGui::Separator();
-					ImGui::Text("Renderable");
-					ImGui::Text("Registered: %s", (
-						[&]() {
-							return std::find(renderables_.begin(), renderables_.end(), asRenderable) != renderables_.end();
-						}() ? "Yes" : "No"));
+				ImGui::Separator();
 
-					ImGui::DragFloat2("Position", &asRenderable->position.x, 0.025f);
-					ImGui::DragFloat2("Scale", &asRenderable->scale.x, 0.025f);
+				auto& ti = sel->typeInfo;
+				auto props = ti.get_properties();
+				ImGui::Text("Properties: %d", static_cast<int>(props.size()));
+				{
+					for (const auto& prop : props) {
+						auto name = prop.get_name().to_string();
+						auto type = prop.get_type();
+						auto value = prop.get_value(sel);
+						if (!value) continue; // Skip invalid values
 
-					// Sprite-specific info
-					if (std::string(sel->getClassName()) == "Sprite") {
-						ImGui::Text("Type: Sprite");
+						ImGui::PushID(name.c_str());
+						ImGui::BeginDisabled(prop.is_readonly());
+
+						if (type.is_arithmetic()) {
+							if (type == rttr::type::get<int>()) {
+								int v = value.to_int();
+								if (ImGui::InputInt(name.c_str(), &v)) {
+									prop.set_value(sel, v);
+								}
+							}
+							else if (type == rttr::type::get<float>()) {
+								float v = value.to_float();
+								if (ImGui::InputFloat(name.c_str(), &v)) {
+									prop.set_value(sel, v);
+								}
+							}
+							else if (type == rttr::type::get<double>()) {
+								double v = value.to_double();
+								if (ImGui::InputDouble(name.c_str(), &v)) {
+									prop.set_value(sel, v);
+								}
+							}
+							else if (type == rttr::type::get<bool>()) {
+								bool v = value.to_bool();
+								if (ImGui::Checkbox(name.c_str(), &v)) {
+									prop.set_value(sel, v);
+								}
+							}
+							else {
+								ImGui::Text("%s: <unhandled arithmetic type>", name.c_str());
+							}
+						}
+						else if (type.is_class()) {
+							if (type == rttr::type::get<std::string>()) {
+								std::string v = value.to_string();
+								char strBuf[256];
+								strncpy_s(strBuf, v.c_str(), sizeof(strBuf));
+								if (ImGui::InputText(name.c_str(), strBuf, sizeof(strBuf))) {
+									prop.set_value(sel, std::string(strBuf));
+								}
+							}
+							else if (type == rttr::type::get<std::string_view>()) {
+								std::string v = value.to_string();
+								char strBuf[256];
+								strncpy_s(strBuf, v.c_str(), sizeof(strBuf));
+								if (ImGui::InputText(name.c_str(), strBuf, sizeof(strBuf))) {
+									std::string_view sv(strBuf);
+									prop.set_value(sel, sv);
+								}
+							} else if (type == rttr::type::get<glm::vec2>()) {
+								glm::vec2 v = value.get_value<glm::vec2>();
+								if (ImGui::InputFloat2(name.c_str(), &v.x)) {
+									prop.set_value(sel, v);
+								}
+							}
+							else if (type == rttr::type::get<glm::vec3>()) {
+								glm::vec3 v = value.get_value<glm::vec3>();
+								if (ImGui::InputFloat3(name.c_str(), &v.x)) {
+									prop.set_value(sel, v);
+								}
+							}
+							else if (type == rttr::type::get<glm::vec4>()) {
+								glm::vec4 v = value.get_value<glm::vec4>();
+								if (ImGui::InputFloat4(name.c_str(), &v.x)) {
+									prop.set_value(sel, v);
+								}
+							}
+							else if (type == rttr::type::get<glm::quat>()) {
+								glm::quat v = value.get_value<glm::quat>();
+								float euler[3] = {};
+								// Convert quat to euler angles for editing
+								glm::vec3 eulerVec = glm::eulerAngles(v);
+								euler[0] = glm::degrees(eulerVec.x);
+								euler[1] = glm::degrees(eulerVec.y);
+								euler[2] = glm::degrees(eulerVec.z);
+								if (ImGui::InputFloat3(name.c_str(), euler)) {
+									// Convert back to quat
+									glm::vec3 newEuler = glm::radians(glm::vec3(euler[0], euler[1], euler[2]));
+									glm::quat newQuat = glm::quat(newEuler);
+									prop.set_value(sel, newQuat);
+								}
+							}
+							else if (type == rttr::type::get<rttr::variant>()) {
+								ImGui::Text("%s: <variant>", name.c_str());
+							}
+							else if (type == rttr::type::get<std::shared_ptr<Instance>>()) {
+								auto inst = value.get_value<std::shared_ptr<Instance>>();
+								if (inst) {
+									ImGui::Text("%s: %s (0x%p)", name.c_str(), std::string(inst->getName()).c_str(), static_cast<void*>(inst.get()));
+								}
+								else {
+									ImGui::Text("%s: <null>", name.c_str());
+								}
+							}
+							else {
+								ImGui::Text("%s: <unhandled class type>", name.c_str());
+							}
+						}
+						else if (type.is_pointer()) {
+							ImGui::Text("%s: 0x%p", name.c_str(), static_cast<void*>(value.get_value<std::shared_ptr<Instance>>().get()));
+						}
+						else {
+							ImGui::Text("%s: <unhandled type %s>", name.c_str(), type.get_name().to_string().c_str());
+						}
+
+						ImGui::EndDisabled();
+						ImGui::PopID();
 					}
 				}
+
+				ImGui::Separator();
 
 				// Children summary
 				ImGui::Separator();
@@ -637,7 +748,7 @@ void Engine::registerRenderable(Renderable* renderable) {
     if (std::find(renderables_.begin(), renderables_.end(), renderable) == renderables_.end()) {
         renderables_.push_back(renderable);
     } else {
-		std::println("Renderable already registered: {:X}", reinterpret_cast<uintptr_t>(renderable));
+		spdlog::warn("Renderable already registered: {:X}", reinterpret_cast<uintptr_t>(renderable));
 	}
 }
 
@@ -653,7 +764,7 @@ void Engine::registerUpdateable(Updateable* updateable) {
 	if (std::find(updateables_.begin(), updateables_.end(), updateable) == updateables_.end()) {
 		updateables_.push_back(updateable);
 	} else {
-		std::println("Updateable already registered: {:X}", reinterpret_cast<uintptr_t>(updateable));
+		spdlog::warn("Updateable already registered: {:X}", reinterpret_cast<uintptr_t>(updateable));
 	}
 }
 

@@ -16,11 +16,10 @@ const std::array<Vertex, 4> vertices = {
 const GLuint indices[] = { 0, 1, 2, 2, 3, 0 };
 
 Sprite::Sprite(const std::string_view name) : Instance(name), Renderable() {
-	reflect();
-	metaType = entt::resolve<Sprite>();
+	typeInfo = rttr::type::get<Sprite>();
 
 	if (!dataInitialized_) {
-		std::println("Initializing static data for Sprite");
+		spdlog::debug("Initializing static data for Sprite");
 
 		// Initialize static data for the first time
 		glGenVertexArrays(1, &vao_);
@@ -49,7 +48,7 @@ bool Sprite::setTexture(std::string_view path) {
 	}
 	auto texture = std::make_shared<Texture>();
 	if (!texture->loadFromFile(path)) {
-		std::println("Failed to load texture from {}", path);
+		spdlog::error("Failed to lad texture from {}", path);
 		return false;
 	}
 

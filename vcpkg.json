@@ -17,9 +17,10 @@
         "opengl3-binding"
       ]
     },
-    "sol2",
     "luajit",
+    "rttr",
+    "sol2",
     "stb",
-    "entt"
+    "spdlog"
   ]
 }

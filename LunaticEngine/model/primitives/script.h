@@ -5,11 +5,6 @@
 #include "model/base.h"
 
 namespace Lunatic {
-	struct PropertyBinding {
-		entt::meta_func setter;
-		entt::meta_func getter;
-	};
-
 	class Script : public Instance, public Updateable {
 	public:
 		explicit Script(std::string_view name);
@@ -19,20 +14,21 @@ namespace Lunatic {
 			return "Script";
 		}
 
-		void loadCode(std::string_view code);
+		void loadCode(std::string_view path);
+		void reloadCode();
 
 		virtual void update() override;
 
-	protected:
-		void reflect() override;
-
+		RTTR_ENABLE(Instance, Updateable);
+		RTTR_REGISTRATION_FRIEND;
 	private:
 		static inline sol::state lua_;
 		static inline bool luaInit_ = false;
-		//static inline Utils::HeteroStringMap<PropertyBinding> propertyBindings_;
 
 		bool finished_ = false;
-		std::string code_;
+
+		std::filesystem::path codePath_;
+
 		sol::coroutine coroutine_;
 		sol::thread luaThread_;
 		sol::environment env_;

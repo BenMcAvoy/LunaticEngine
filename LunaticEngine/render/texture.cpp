@@ -5,14 +5,14 @@
 using namespace Lunatic;
 
 bool Texture::loadFromFile(std::string_view path) {
-	std::println("Loading texture from {}", path);
+	spdlog::debug("Loading texture from {}", path);
 
 	// Load using stb_image
 	stbi_set_flip_vertically_on_load(1); // Flip the image vertically (OGL compliant)
 	unsigned char* data = stbi_load(path.data(), &width_, &height_, &channels_, STBI_rgb_alpha);
 	channels_ = 4;
 	if (!data) {
-		std::println("Failed to load texture image: {}", stbi_failure_reason());
+		spdlog::error("Failed to load texture image: {}", stbi_failure_reason());
 		return false;
 	}
 

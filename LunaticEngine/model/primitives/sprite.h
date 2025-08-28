@@ -15,13 +15,13 @@ namespace Lunatic {
         }
 
 		bool setTexture(std::string_view path);
+		std::string_view getTexturePath() const { return currentTexturePath_; }
 		void clearTexture() { texture_ = nullptr; }
 
         void draw(Shader& shader) override;
 
-    protected:
-        void reflect() override;
-
+		RTTR_ENABLE(Instance, Renderable);
+		RTTR_REGISTRATION_FRIEND;
     private:
         // All data below is static and shared across all instances of Sprite
         static inline bool dataInitialized_ = false;

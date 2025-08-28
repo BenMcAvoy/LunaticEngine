@@ -8,8 +8,6 @@
 #include "render/renderer.h"
 #include "render/shader.h"
 
-#include "core/luaman.h"
-
 #include "model/primitives/camera.h"
 
 namespace Lunatic {
@@ -70,7 +68,6 @@ namespace Lunatic {
 		std::vector<Renderable*> renderables_;
 		std::vector<Updateable*> updateables_;
 
-		LuaMan luaManager_;
 		Renderer renderer_;
 
 		// Debug UI state

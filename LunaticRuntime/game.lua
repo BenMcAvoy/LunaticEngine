@@ -14,8 +14,8 @@ local RESTART_SECONDS = 5
 local boardSprites = {}
 
 -- Build board references (assumes 3x3 sprites are children in deterministic order)
-local board = script:getParent()
-for i, child in ipairs(board:getChildren()) do
+local board = script.parent
+for i, child in ipairs(board.children) do
 	if child:isA("Sprite") then
 		local x = math.floor((i - 1) / 3) + 1
 		local y = (i - 1) % 3 + 1
@@ -35,15 +35,14 @@ end
 -- Helpers to set X and O (ensures texture + white color)
 local function placeXAt(x, y)
 	boardSprites[x][y][2] = 1
-	boardSprites[x][y][1]:setTexture(randomVariantTexture("cursor"))
-	-- White = max brightness for textured sprites with this shader
-	boardSprites[x][y][1]:setColor(vec4.new(1, 1, 1, 1))
+	boardSprites[x][y][1].texturePath = randomVariantTexture("cursor")
+	boardSprites[x][y][1].color = vec4.new(1, 1, 1, 1)
 end
+
 local function placeOAt(x, y)
 	boardSprites[x][y][2] = 2
-	boardSprites[x][y][1]:setTexture(randomVariantTexture("circle"))
-	-- White = max brightness for textured sprites with this shader
-	boardSprites[x][y][1]:setColor(vec4.new(1, 1, 1, 1))
+	boardSprites[x][y][1].texturePath = randomVariantTexture("circle")
+	boardSprites[x][y][1].color = vec4.new(1, 1, 1, 1)
 end
 
 -- Reset board to very transparent black tiles
@@ -52,8 +51,7 @@ local function resetBoard()
 		for y = 1, 3 do
 			boardSprites[x][y][2] = 0
 			boardSprites[x][y][1]:clearTexture()
-			-- Set to very transparent black (suggests interaction, not a sprite)
-			boardSprites[x][y][1]:setColor(vec4.new(0, 0, 0, 0.08))
+			boardSprites[x][y][1].color = vec4.new(0, 0, 0, 0.08)
 		end
 	end
 	placingX = true
@@ -61,7 +59,6 @@ end
 
 -- Win checker: returns 0 (none), 1 (X), 2 (O)
 local function checkWin()
-	-- Keep this for minimax
 	for i = 1, 3 do
 		-- rows
 		if boardSprites[i][1][2] ~= 0 and boardSprites[i][1][2] == boardSprites[i][2][2] and boardSprites[i][1][2] == boardSprites[i][3][2] then
@@ -124,12 +121,12 @@ end
 local function minimax(isMaximizing, depth)
 	local winner = checkWin()
 	if winner ~= 0 then
-		if winner == 2 then return 10 - depth end -- AI win
-		if winner == 1 then return depth - 10 end -- Human win
+		if winner == 2 then return 10 - depth end
+		if winner == 1 then return depth - 10 end
 	end
 
 	local empties = emptyCells()
-	if #empties == 0 then return 0 end -- draw
+	if #empties == 0 then return 0 end
 
 	if isMaximizing then
 		local best = -1e9
@@ -209,14 +206,10 @@ local function applyWinHighlight(winCells)
 			local state = boardSprites[x][y][2]
 			if state ~= 0 then
 				if set[x .. "," .. y] then
-					-- Full brightness for winners
-					sprite:setColor(vec4.new(1, 1, 1, 1))
+					sprite.color = vec4.new(1, 1, 1, 1)
 				else
-					-- Dim non-winning marks to emphasize the line
-					sprite:setColor(vec4.new(0.25, 0.25, 0.25, 1))
+					sprite.color = vec4.new(0.25, 0.25, 0.25, 1)
 				end
-			else
-				-- leave empty cells as-is (already very faint)
 			end
 		end
 	end
@@ -224,7 +217,6 @@ end
 
 -- Show result text then restart
 local function showResultThenRestart(win, winCells)
-	-- Highlight winning connection if any
 	if win ~= 0 and winCells then
 		applyWinHighlight(winCells)
 	end
@@ -244,204 +236,49 @@ end
 
 -- Main loop
 while true do
-	-- If finished (win or full) show result then restart
 	local win, winCells = checkWinDetailed()
 	if win ~= 0 or isBoardFull() then
 		showResultThenRestart(win, winCells)
-		-- after this returns, board is reset
 	end
 
-	-- AI turn
 	if not placingX then
 		aiTakeTurn()
 		placingX = true
 	end
 
-	-- Draw prompt for player
 	local prompt = placingX and "Click to place X" or "AI thinking..."
 	engine:drawText(vec2.new(0, 0.95), prompt, vec4.new(0.2, 0.2, 0.2, 1))
 
-	-- Get input once per frame
 	local leftClick = engine:getMouseButtonState(0)
 	local mousePos = engine:getMousePos()
 	local worldPos = camera:screenToWorld(mousePos)
 
-	-- Process cells explicitly in deterministic order (1..3)
 	for x = 1, 3 do
 		for y = 1, 3 do
 			local boardSprite = boardSprites[x][y]
 			local sprite = boardSprite[1]
 			local state = boardSprite[2]
 
-			local pos = sprite:getPosition()
-			local half = 0.25 -- sprite is 0.5x0.5
+			local pos = sprite.position
+			local half = 0.25
 
 			local inside =
 				worldPos.x >= pos.x - half and worldPos.x <= pos.x + half and
 				worldPos.y >= pos.y - half and worldPos.y <= pos.y + half
 
-			-- Hover highlight only for empty cells and only on player's turn
 			if inside and state == 0 and placingX then
-				-- Slightly more visible on hover (suggest interaction, not presence)
-				sprite:setColor(vec4.new(0.15, 0.15, 0.15, 0.18))
+				sprite.color = vec4.new(0.15, 0.15, 0.15, 0.18)
 			elseif state == 0 then
-				-- ensure empty non-hover cells are very transparent black, no texture
 				sprite:clearTexture()
-				sprite:setColor(vec4.new(0, 0, 0, 0.08))
+				sprite.color = vec4.new(0, 0, 0, 0.08)
 			end
 
-			-- Human placement: on left mouse held down (no debounce)
 			if placingX and inside and leftClick == 1 and state == 0 then
 				placeXAt(x, y)
-				placingX = false -- hand turn to AI
+				placingX = false
 			end
 		end
 	end
 
 	yield()
-end
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
--- Below is very sketchy, non AI generated code that I was not thinking about
--- It is terrible in quality, thrown together, and not given a second thought
--- Please expect nothing from it
-
-local camera = root:findChildByName("MainCamera")
-local mousePos, worldPos
-local placingX = true
-
--- black = none
--- red = x
--- blue = o
-
--- Store board references to sprites
-boardSprites = {}
-
-local board = script:getParent()
-for i, child in ipairs(board:getChildren()) do
-	if child:isA("Sprite") then
-		-- board is 3x3, make 2d table
-		local x = math.floor((i - 1) / 3) + 1
-		local y = (i - 1) % 3 + 1
-		boardSprites[x] = boardSprites[x] or {}
-		boardSprites[x][y] = {child, 0} -- child, 0 is the default state
-	end
-end
-
--- Returns 0, 1, 2. 0 means no win
-function checkWin()
-    -- Check rows and columns
-    for i = 1, 3 do
-        if boardSprites[i][1][2] == boardSprites[i][2][2] and boardSprites[i][1][2] == boardSprites[i][3][2] and boardSprites[i][1][2] ~= 0 then
-            return boardSprites[i][1][2] -- Return the winning state (1 or 2)
-        end
-        if boardSprites[1][i][2] == boardSprites[2][i][2] and boardSprites[1][i][2] == boardSprites[3][i][2] and boardSprites[1][i][2] ~= 0 then
-            return boardSprites[1][i][2] -- Return the winning state (1 or 2)
-        end
-    end
-    -- Check diagonals
-    if boardSprites[1][1][2] == boardSprites[2][2][2] and boardSprites[1][1][2] == boardSprites[3][3][2] and boardSprites[1][1][2] ~= 0 then
-        return boardSprites[1][1][2]
-    end
-    if boardSprites[3][1][2] == boardSprites[2][2][2] and boardSprites[3][1][2] == boardSprites[1][3][2] and boardSprites[3][1][2] ~= 0 then
-        return boardSprites[3][1][2]
-    end
-    return 0 -- No win
-end
-
-while true do
-    local win = checkWin()
-    if win ~= 0 then
-        while true do
-            local winText = win == 1 and "X wins!" or "O wins!"
-            engine:drawText(vec2.new(0, 0.95), winText, vec4.new(0.2, 0.2, 0.2, 1))
-            yield()
-        end
-    end
-
-    local text = placingX and "Click to place X" or "Click to place O"
-    engine:drawText(vec2.new(0, 0.95), text, vec4.new(0.2, 0.2, 0.2, 1))
-
-    local leftClick = engine:getMouseButtonState(0)
-
-    for x, v in pairs(boardSprites) do
-        for y, boardSprite in pairs(v) do
-            local position = boardSprite[1]:getPosition()
-            local half = 0.25 -- sprite is 0.5x0.5, so half-size = 0.25
-
-            mousePos = engine:getMousePos()
-            worldPos = camera:screenToWorld(mousePos)
-
-            -- 2D AABB check (ignore Z)
-            local inside =
-                worldPos.x >= position.x - half and worldPos.x <= position.x + half and
-                worldPos.y >= position.y - half and worldPos.y <= position.y + half
-
-            if inside then
-                if boardSprite[2] == 0 then
-                    boardSprite[1]:setColor(vec4.new(0.2, 0.2, 0.2, 1)) -- White for empty cell
-                end
-
-                if leftClick == 1 then
-                    colour = placingX and 1 or 2 -- 1 for X, 2 for O
-                    if boardSprite[2] == 0 then -- Only place if the cell is empty
-                        boardSprite[2] = colour
-                        placingX = not placingX -- Toggle between X and O
-                    end
-                end
-            else
-                boardSprite[1]:setColor(vec4.new(0, 0, 0, 1)) -- White for empty cell
-            end
-
-            local state = boardSprite[2]
-            if state == 0 then
-                -- No state, do nothing
-            elseif state == 1 then
-                boardSprite[1]:setColor(vec4.new(1, 0, 0, 1)) -- Red for X
-            elseif state == 2 then
-                boardSprite[1]:setColor(vec4.new(0, 0, 1, 1)) -- Blue for O
-            end
-        end
-    end
-
-    yield()
 end

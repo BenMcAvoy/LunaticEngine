@@ -13,15 +13,17 @@
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
 
-#include <print>
 #include <array>
 #include <memory>
 #include <vector>
 #include <random>
+#include <string>
 #include <fstream>
+#include <numeric>
 #include <algorithm>
 #include <functional>
 #include <filesystem>
+#include <string_view>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -31,6 +33,10 @@
 
 #include <sol/sol.hpp>
 
-#include <entt/entt.hpp>
+#include <rttr/registration>
+#include <rttr/registration_friend>
+#include <rttr/type>
 
 #include <stb_image.h>
+
+#include <spdlog/spdlog.h>

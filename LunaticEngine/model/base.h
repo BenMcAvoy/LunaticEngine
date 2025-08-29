@@ -34,6 +34,9 @@ namespace Lunatic {
 		virtual std::string_view getClassName() const;
 		virtual void onAncestorChanged() { /* No-op by default, not always needed */ }
 
+		nlohmann::json serialize() const;
+		void deserialize(const nlohmann::json& j);
+
 		RTTR_ENABLE();
 
 		friend class rttr::registration::class_<Instance>; 

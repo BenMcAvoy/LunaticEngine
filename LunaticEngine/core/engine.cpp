@@ -202,7 +202,32 @@ void Engine::run() {
 				}
 			}
 		}
-			ImGui::End();
+		ImGui::End();
+
+		if (ImGui::Begin("Updateables list")) {
+			{
+				ImGuiListClipper clipper;
+				clipper.Begin(static_cast<int>(updateables_.size()));
+				while (clipper.Step()) {
+					for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; ++i) {
+						auto* updateable = updateables_[i];
+						if (updateable) {
+							ImGui::Text("0x%p", static_cast<void*>(updateable));
+							ImGui::SameLine();
+							ImGui::PushID(updateable);
+							if (ImGui::SmallButton("Copy")) {
+								ImGui::SetClipboardText(std::format("0x{:X}", reinterpret_cast<uintptr_t>(updateable)).c_str());
+							}
+							ImGui::PopID();
+						}
+						else {
+							ImGui::Text("Updateable: nullptr");
+						}
+					}
+				}
+			}
+		}
+		ImGui::End();
 
 		// --- Instance Hierarchy and Inspector ---
 		if (ImGui::Begin("Instance Hierarchy")) {
@@ -251,7 +276,7 @@ void Engine::run() {
 
 			drawNode(rootInstance);
 		}
-			ImGui::End();
+		ImGui::End();
 
 		if (ImGui::Begin("Instance Inspector")) {
 			if (auto sel = selectedInstance_.lock()) {
@@ -420,7 +445,7 @@ void Engine::run() {
 				ImGui::Text("No selection");
 			}
 		}
-			ImGui::End();
+		ImGui::End();
 
 		renderStats(ImGui::GetIO().DeltaTime, static_cast<int>(renderables_.size()));
 

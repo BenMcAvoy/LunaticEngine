@@ -15,6 +15,10 @@ namespace Lunatic {
 		}
 
 		void loadCode(std::string_view path);
+		std::string_view getCodePath() const {
+			return codePath_.string();
+		}
+
 		void reloadCode();
 
 		virtual void update() override;

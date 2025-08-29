@@ -40,3 +40,5 @@
 #include <stb_image.h>
 
 #include <spdlog/spdlog.h>
+
+#include <nlohmann/json.hpp>

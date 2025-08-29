@@ -20,7 +20,8 @@
     "luajit",
     "rttr",
     "sol2",
+    "spdlog",
     "stb",
-    "spdlog"
+    "nlohmann-json"
   ]
 }

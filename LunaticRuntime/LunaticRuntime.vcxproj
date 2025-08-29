@@ -95,7 +95,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)LunaticEngine;$(SolutionDir)vcpkg_installed\x64-windows-static-md\x64-windows-static-md\include\luajit;$(SolutionDir)LunaticEngine\vendor\</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)LunaticEngine;$(SolutionDir)vcpkg_installed\x64-windows-static\x64-windows-static\include\luajit;$(SolutionDir)LunaticEngine\vendor\</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
@@ -114,7 +114,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)LunaticEngine;$(SolutionDir)vcpkg_installed\x64-windows-static-md\x64-windows-static-md\include\luajit;$(SolutionDir)LunaticEngine\vendor\</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)LunaticEngine;$(SolutionDir)vcpkg_installed\x64-windows-static\x64-windows-static\include\luajit;$(SolutionDir)LunaticEngine\vendor\</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
@@ -131,7 +131,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)LunaticEngine;$(SolutionDir)vcpkg_installed\x64-windows-static-md\x64-windows-static-md\include\luajit;$(SolutionDir)LunaticEngine\vendor\</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)LunaticEngine;$(SolutionDir)vcpkg_installed\x64-windows-static\x64-windows-static\include\luajit;$(SolutionDir)LunaticEngine\vendor\</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
@@ -170,7 +170,6 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <None Include="board.lua" />
     <None Include="cursor.lua" />
     <None Include="game.lua" />
   </ItemGroup>

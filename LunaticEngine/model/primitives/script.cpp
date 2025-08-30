@@ -23,8 +23,7 @@ rttr::variant solToRTTR(sol::object obj) {
     case sol::type::string:
         return obj.as<std::string_view>();
     case sol::type::number:
-        spdlog::warn("Tried to parse a number... none");
-        return {};
+		return obj.as<float>();
     case sol::type::thread:
         spdlog::warn("Tried to parse a thread... none");
         return {};
@@ -136,7 +135,7 @@ sol::object rttrToSol(sol::state_view lua, const rttr::variant& var, std::string
     return sol::nil; // fallback
 }
 
-void Script::loadCode(std::string_view path) {
+void Script::loadCode(std::string path) {
     coroutine_ = sol::coroutine();
     env_ = sol::environment();
     finished_ = false;
@@ -279,16 +278,16 @@ void Script::loadCode(std::string_view path) {
         luaInit_ = true;
     }
 
-	std::ifstream file(path.data());
+    std::ifstream file(path.c_str());
     if (!file.is_open()) {
         spdlog::error("Failed to open script file: {}", path);
         return;
 	}
-	codePath_ = path;
+    codePath_ = path;
     std::string code((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
 	file.close();
 
-    sol::load_result lr = lua_.load(code, path.data());
+    sol::load_result lr = lua_.load(code, path.c_str());
     if (!lr.valid()) {
         sol::error err = lr;
         spdlog::error("Lua load error in script {}: {}", getName(), err.what());
@@ -329,11 +328,9 @@ void Script::update() {
 		return; // No code to execute
 	}
 
-	std::shared_ptr<Instance> sharedPtr = shared_from_this();
-	env_["script"] = sharedPtr;
-
+	env_["script"] = static_cast<Instance*>(this);
 	static auto& engine = Engine::getInstance();
-	env_["root"] = engine.rootInstance;
+    env_["root"] = engine.rootInstance.get();
 
 	sol::protected_function_result result = coroutine_();
 

@@ -14,8 +14,8 @@ namespace Lunatic {
 			return "Script";
 		}
 
-		void loadCode(std::string_view path);
-		std::string_view getCodePath() const {
+		void loadCode(std::string path);
+		std::string getCodePath() const {
 			return codePath_.string();
 		}
 

@@ -16,7 +16,6 @@ while true do
 	calls = calls + 1
 	if calls >= 20 then
 		textureIndex = textureIndex + 1
-
 		calls = 0
 	end
 

@@ -21,6 +21,8 @@ int main(int argc, char** argv) {
 	spdlog::set_level(spdlog::level::trace);
 
 	Lunatic::Engine& engine = Lunatic::Engine::getInstance();
+	engine.init();
+
 	auto& rootInstance = engine.rootInstance;
 
 	if (1) {

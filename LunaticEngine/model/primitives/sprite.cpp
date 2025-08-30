@@ -48,7 +48,7 @@ bool Sprite::setTexture(std::string_view path) {
 	}
 	auto texture = std::make_shared<Texture>();
 	if (!texture->loadFromFile(path)) {
-		spdlog::error("Failed to lad texture from {}", path);
+		spdlog::error("Failed to load texture from {}", path);
 		return false;
 	}
 

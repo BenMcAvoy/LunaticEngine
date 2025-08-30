@@ -83,31 +83,35 @@ void renderStats(float dt, int renderableCount) {
     ImGui::End();
 }
 
-Engine::Engine() {
-	if (!glfwInit()) {
-		const char* description;
-		int code = glfwGetError(&description);
-		spdlog::critical("Failed to init GLFW: {}", description);
+void Engine::init(GLFWwindow* externalWindow, bool initLibs) {
+	if (glfwWindow_) {
+		spdlog::warn("Engine already initialized");
 		return;
 	}
 
-	glfwSetErrorCallback(winErrorCallback);
-	glfwWindow_ = glfwCreateWindow(800, 600, "Lunatic Engine", nullptr, nullptr);
-	if (!glfwWindow_) {
-		spdlog::critical("Failed to create GLFW window");
-		glfwTerminate();
-		return;
+	if (externalWindow) {
+		glfwWindow_ = externalWindow;
+		spdlog::info("Using external GLFW window");
+	}
+	else {
+		if (!glfwInit()) {
+			spdlog::critical("Failed to initialize GLFW");
+			return;
+		}
+
+		glfwSetErrorCallback(winErrorCallback);
+		glfwWindow_ = glfwCreateWindow(windowWidth_, windowHeight_, windowTitle_, nullptr, nullptr);
+		glfwMakeContextCurrent(glfwWindow_);
+
+		if (!glfwWindow_) {
+			spdlog::critical("Engine initialization failed due to window creation failure");
+			return;
+		}
+		spdlog::info("Created new GLFW window");
 	}
 
-	glfwMakeContextCurrent(glfwWindow_);
 	glfwSwapInterval(1);
-
-	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
-		spdlog::critical("Failed to initialize GLAD");
-		glfwDestroyWindow(glfwWindow_);
-		glfwTerminate();
-		return;
-	}
+	glfwMakeContextCurrent(glfwWindow_);
 
 	glfwSetWindowUserPointer(glfwWindow_, this);
 	glfwSetWindowPosCallback(glfwWindow_, winWindowPosCallback);
@@ -129,28 +133,38 @@ Engine::Engine() {
 	glfwSetJoystickCallback(winJoystickCallback);
 	glfwSetDropCallback(glfwWindow_, winDropCallback);
 
+	if (initLibs) {
+		if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
+			spdlog::critical("Failed to initialize GLAD");
+			return;
+		}
+
+		// Initialize ImGui
+		IMGUI_CHECKVERSION();
+		ImGui::CreateContext();
+		ImGuiIO& io = ImGui::GetIO(); (void)io;
+		io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;         // Enable Docking
+		ImGui::StyleColorsDark();
+
+		if (std::filesystem::exists("C:\\Windows\\Fonts\\Arial.ttf")) {
+			io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\Arial.ttf", 16.0f);
+			io.Fonts->Build();
+		}
+		else {
+			spdlog::warn("Arial font not found, using default font");
+		}
+
+		ImGui_ImplGlfw_InitForOpenGL(glfwWindow_, true);
+		ImGui_ImplOpenGL3_Init("#version 460");
+	}
+
+	glViewport(0, 0, 800, 600);
+}
+
+Engine::Engine() {
 	// Initialize input states to None (no event yet)
 	keyActions_.fill(KeyAction::None);
 	mouseButtonActions_.fill(MouseButtonAction::None);
-
-	// Initialize ImGui
-	IMGUI_CHECKVERSION();
-	ImGui::CreateContext();
-	ImGuiIO& io = ImGui::GetIO(); (void)io;
-	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;         // Enable Docking
-	ImGui::StyleColorsDark();
-
-	if (std::filesystem::exists("C:\\Windows\\Fonts\\Arial.ttf")) {
-		io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\Arial.ttf", 16.0f);
-		io.Fonts->Build();
-	} else {
-		spdlog::warn("Arial font not found, using default font");
-	}
-
-	ImGui_ImplGlfw_InitForOpenGL(glfwWindow_, true);
-	ImGui_ImplOpenGL3_Init("#version 460");
-
-	glViewport(0, 0, 800, 600);
 
 	rootInstance = std::make_shared<Instance>("rootInstance");
 	spdlog::info("Lunatic Engine initialized successfully");
@@ -179,6 +193,7 @@ void Engine::run() {
 			}
 		}
 
+		/*
 		if (ImGui::Begin("Renderables list")) {
 			{
 				ImGuiListClipper clipper;
@@ -447,7 +462,7 @@ void Engine::run() {
 		}
 		ImGui::End();
 
-		renderStats(ImGui::GetIO().DeltaTime, static_cast<int>(renderables_.size()));
+		renderStats(ImGui::GetIO().DeltaTime, static_cast<int>(renderables_.size()));*/
 
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -456,6 +471,13 @@ void Engine::run() {
 }
 
 void Engine::hideCursor() {
+	int vx, vy, vw, vh;
+	renderer_.getViewport(vx, vy, vw, vh);
+
+	if (mouseX_ < vx || mouseX_ > (vx + vw) || mouseY_ < vy || mouseY_ > (vy + vh)) {
+		return;
+	}
+
 	if (glfwWindow_) {
 		glfwSetInputMode(glfwWindow_, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 	}
@@ -474,22 +496,23 @@ void Engine::drawText(glm::vec2 position, const std::string& text, glm::vec4 col
 	// Calculate text size to center it
 	ImVec2 textSize = ImGui::CalcTextSize(text.c_str());
 	ImVec2 textPos = ImVec2(screenPos.x - textSize.x * 0.5f, screenPos.y - textSize.y * 0.5f);
+
+	// Apply viewport offset
+	int vx, vy, vw, vh;
+	renderer_.getViewport(vx, vy, vw, vh);
+	textPos.x += vx;
+	textPos.y += vy;
+
 	ImGui::GetForegroundDrawList()->AddText(
 		textPos,
 		ImColor(color.r, color.g, color.b, color.a),
 		text.c_str()
 	);
-
-	/*
-	ImGui::GetForegroundDrawList()->AddText(
-		ImVec2(screenPos.x, screenPos.y),
-		ImColor(color.r, color.g, color.b, color.a),
-		text.c_str()
-	);
-	*/
 }
 
 void Engine::resize(int width, int height) {
+	if (!autoResizeRenderer_) return;
+
 	if (glfwWindow_) {
 		glViewport(0, 0, width, height);
 		renderer_.resize(width, height);
@@ -566,13 +589,15 @@ void Engine::winWindowMaximizeCallback(GLFWwindow* window, int maximized){
 }
 
 void Engine::winFramebufferSizeCallback(GLFWwindow* window, int width, int height){
-	//std::print("Framebuffer size changed to {}x{}\n", width, height);
 	Engine* engine = W2Engine(window);
+	if (!engine->autoResizeRenderer_) return;
+
 	if (engine) {
 		engine->windowWidth_ = width;
 		engine->windowHeight_ = height;
 		glViewport(0, 0, width, height);
 		engine->renderer_.resize(width, height);
+		engine->renderer_.setViewport(0, 0, width, height);
 	}
 }
 
@@ -724,9 +749,18 @@ MouseButtonAction Engine::getMouseButtonState(int button) {
 double Engine::getMouseX() const { return mouseX_; }
 double Engine::getMouseY() const { return mouseY_; }
 glm::vec2 Engine::getMousePos() const {
-	float x = static_cast<float>(mouseX_);
+	/*float x = static_cast<float>(mouseX_);
 	float y = static_cast<float>(mouseY_);
 
+	return { x, y };*/
+
+	// used to be return { x, y }.
+	// HOWEVER, we now have a "viewport" in the renderer which may not be full window size
+	// So we need to convert mouse position to viewport space (not NDC, just viewport pixels)
+	int vx, vy, vw, vh;
+	renderer_.getViewport(vx, vy, vw, vh);
+	float x = static_cast<float>(mouseX_ - vx);
+	float y = static_cast<float>(mouseY_ - vy);
 	return { x, y };
 }
 
@@ -782,6 +816,8 @@ void Engine::unregisterRenderable(Renderable* renderable) {
     if (it != renderables_.end()) {
         std::iter_swap(it, renderables_.end() - 1);
         renderables_.pop_back();
+	} else {
+		spdlog::trace("Tried to unregister non-registered Renderable {:X}", reinterpret_cast<uintptr_t>(renderable));
     }
 }
 

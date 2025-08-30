@@ -8,7 +8,6 @@ using namespace Lunatic;
 
 // Don't call `Renderable` constructor here to avoid adding to renderables list (the camera shouldn't be rendered traditionally)
 Camera::Camera(std::string_view name) : Instance(name) {
-	position_ = { 0.0f, 0.0f, 0.0f };
 	viewportSize_ = { 800.0f, 600.0f };
 	rotation_ = 0.0f;
 	zoom_ = 1.0f;
@@ -33,7 +32,8 @@ void Camera::update() {
 	float orthoWidth = orthoHeight * aspectRatio;
 	projection_ = glm::ortho(-orthoWidth, orthoWidth, -orthoHeight, orthoHeight, nearPlane_, farPlane_);
 	view_ = glm::mat4(1.0f);
-	view_ = glm::translate(view_, -position_);
+
+	view_ = glm::translate(view_, -glm::vec3(position, 0.0f));
 	view_ = glm::rotate(view_, glm::radians(rotation_), glm::vec3(0.0f, 0.0f, 1.0f));
 
 	// Update forward, right, and up vectors

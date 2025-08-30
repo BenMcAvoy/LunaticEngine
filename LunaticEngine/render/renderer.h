@@ -25,12 +25,15 @@ namespace Lunatic {
 		void render(const std::vector<Renderable*>&);
 		void resize(int width, int height);
 
-		//void registerRenderable(Renderable* renderable);
-		//void unregisterRenderable(Renderable* renderable);
-
-		//std::vector<Renderable*>& getRenderables();
+		void getViewport(int& vx, int& vy, int& vw, int& vh) const;
+		void setViewport(int x, int y, int width, int height);
 
 	private:
+		int viewportX_ = 0;
+		int viewportY_ = 0;
+		int viewportWidth_ = 800;
+		int viewportHeight_ = 600;
+
 		std::shared_ptr<RenderState> state_ = nullptr;
 		Camera* mainCamera_ = nullptr;
 	};

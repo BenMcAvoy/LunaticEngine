@@ -67,7 +67,6 @@ nlohmann::json Instance::serialize() const {
 		rttr::variant obj = std::ref(const_cast<Instance&>(*this));
 		auto propValue = prop.get_value(obj);
 		if (propValue.is_valid()) {
-			// Handle basic types; for complex types, you might need to implement custom serialization
 			if (propValue.is_type<int>()) {
 				j[propName] = propValue.get_value<int>();
 			}
@@ -228,6 +227,39 @@ void Instance::deserialize(const nlohmann::json& j) {
 				}
 			}
 		}
+	}
+}
+
+void Instance::clearChildren() {
+	auto currentChildren = std::move(children_);
+	children_.clear();
+	for (auto& child : currentChildren) {
+		if (child) {
+			child->destroy();
+		}
+	}
+	
+	// If this is the root, purge engine registries to guarantee a clean slate
+	if (Engine::getInstance().rootInstance.get() == this) {
+		auto& eng = Engine::getInstance();
+		eng.getRenderables().clear();
+		eng.getUpdateables().clear();
+	}
+}
+
+void Instance::destroy() {
+	auto currentChildren = std::move(children_);
+	children_.clear();
+	for (auto& child : currentChildren) {
+		if (child) {
+			child->destroy();
+		}
+	}
+
+	if (auto parent = parent_.lock()) {
+		auto& siblings = parent->children_;
+		siblings.erase(std::remove(siblings.begin(), siblings.end(), shared_from_this()), siblings.end());
+		parent_.reset();
 	}
 }
 

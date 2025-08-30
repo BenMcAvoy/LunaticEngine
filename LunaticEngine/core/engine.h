@@ -34,6 +34,11 @@ namespace Lunatic {
 		Engine(Engine&&) = delete;
 		Engine& operator=(Engine&&) = delete;
 
+		Engine();
+		~Engine();
+
+		void init(GLFWwindow* externalWindow = nullptr, bool initLibs = true);
+
 		void run();
 
 		KeyAction getKeyState(int key);
@@ -45,6 +50,8 @@ namespace Lunatic {
 		double getMouseDeltaY();
 		double getScrollDeltaX();
 		double getScrollDeltaY();
+
+		void setAutoResizeRenderer(bool enable) { autoResizeRenderer_ = enable; }
 
 		void drawText(glm::vec2 position, const std::string& text, glm::vec4 colour);
 
@@ -63,6 +70,14 @@ namespace Lunatic {
 		void unregisterUpdateable(Updateable* updateable);
 
 		void registerMainCamera(Camera* camera);
+
+		void setWindowOffset(int x, int y) {
+			windowOffsetX_ = x; windowOffsetY_ = y;
+		}
+
+		Renderer& getRenderer() { return renderer_; }
+		std::vector<Renderable*>& getRenderables() { return renderables_; }
+		std::vector<Updateable*>& getUpdateables() { return updateables_; }
 
 	private:
 		std::vector<Renderable*> renderables_;
@@ -96,14 +111,15 @@ namespace Lunatic {
 		bool mouseInWindow_ = false;
 
 		// Window data
+		int windowOffsetX_ = 0;
+		int windowOffsetY_ = 0;
 		int windowWidth_ = 800;
 		int windowHeight_ = 600;
 		const char* windowTitle_ = "Lunatic Engine";
 		int windowPosX_ = 100;
 		int windowPosY_ = 100;
 
-		Engine();
-		~Engine();
+		bool autoResizeRenderer_ = true;
 
 		// GLFW callbacks (not all are useful, but all are provided for completeness)
 		static void winErrorCallback(int error_code, const char* description);

@@ -3,3 +3,4 @@ x64
 vcpkg_installed
 *.vcxproj.*
 imgui.ini
+tempScene.json

@@ -27,7 +27,8 @@ rttr::registration::class_<Lunatic::Instance>("Instance")
 rttr::registration::class_<Lunatic::Renderable>("Renderable")
 .property("position", &Lunatic::Renderable::getPosition, &Lunatic::Renderable::setPosition)
 .property("scale", &Lunatic::Renderable::getScale, &Lunatic::Renderable::setScale)
-.property("color", &Lunatic::Renderable::getColor, &Lunatic::Renderable::setColor);
+.property("color", &Lunatic::Renderable::getColor, &Lunatic::Renderable::setColor)
+.property("rotation", &Lunatic::Renderable::getRotation, &Lunatic::Renderable::setRotation);
 
 rttr::registration::class_<Lunatic::Updateable>("Updateable"); // Nothing should be reflected here
 
@@ -46,11 +47,10 @@ rttr::registration::class_<Lunatic::NativeScript>("NativeScript"); // Nothing sh
 rttr::registration::class_<Lunatic::Camera>("Camera")
 CONSTRUCT_IMPL(Camera)
 .property_readonly("viewportSize", &Lunatic::Camera::viewportSize_)
-.property("position", &Lunatic::Camera::getPosition, &Lunatic::Camera::setPosition)
 .property("rotation", &Lunatic::Camera::rotation_)
-.property_readonly("zoom", &Lunatic::Camera::zoom_)
-.property_readonly("nearPlane", &Lunatic::Camera::nearPlane_)
-.property_readonly("farPlane", &Lunatic::Camera::farPlane_)
+.property("zoom", &Lunatic::Camera::getZoom, &Lunatic::Camera::setZoom)
+.property("nearPlane", &Lunatic::Camera::getNearPlane, &Lunatic::Camera::setNearPlane)
+.property("farPlane", &Lunatic::Camera::getFarPlane, &Lunatic::Camera::setFarPlane)
 .method("screenToWorld", &Lunatic::Camera::screenToWorld)
 .method("worldToScreen", &Lunatic::Camera::worldToScreen);
 }

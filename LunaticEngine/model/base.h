@@ -37,6 +37,10 @@ namespace Lunatic {
 		nlohmann::json serialize() const;
 		void deserialize(const nlohmann::json& j);
 
+		void clearChildren();
+
+		void destroy();
+
 		RTTR_ENABLE();
 
 		friend class rttr::registration::class_<Instance>; 
@@ -52,6 +56,9 @@ namespace Lunatic {
 
 		void setColor(const glm::vec4& col) { color = col; }
 		const glm::vec4& getColor() const { return color; }
+
+		void setRotation(float rot) { rotation = rot; }
+		float getRotation() const { return rotation; }
 
 		glm::vec2 position = { 0.0f, 0.0f };
 		glm::vec2 scale = { 1.0f, 1.0f };

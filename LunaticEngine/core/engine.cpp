@@ -166,7 +166,7 @@ Engine::Engine() {
 	keyActions_.fill(KeyAction::None);
 	mouseButtonActions_.fill(MouseButtonAction::None);
 
-	rootInstance = std::make_shared<Instance>("rootInstance");
+	rootInstance = std::make_shared<Instance>("Root");
 	spdlog::info("Lunatic Engine initialized successfully");
 }
 

@@ -185,11 +185,9 @@ void Script::loadCode(std::string path) {
 
                         for (; it != end; ++it) {
                             if (it->is<std::string_view>()) {
-                                //strs.emplace_back(it->as<std::string>());
-
 								std::string str = it->as<std::string>();
 								spdlog::trace("Pushed string arg: {}", str);
-								strs.emplace_back(std::move(str));
+								strs.emplace_back(str);
 
                                 args.emplace_back(std::string_view(strs.back()));
                             }

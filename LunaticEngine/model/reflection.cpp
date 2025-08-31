@@ -4,6 +4,7 @@
 #include "primitives/sprite.h"
 #include "primitives/camera.h"
 #include "primitives/nativescript.h"
+#include "primitives/sound.h"
 
 extern "C" void _force_link_anchor() {}
 
@@ -53,4 +54,11 @@ CONSTRUCT_IMPL(Camera)
 .property("farPlane", &Lunatic::Camera::getFarPlane, &Lunatic::Camera::setFarPlane)
 .method("screenToWorld", &Lunatic::Camera::screenToWorld)
 .method("worldToScreen", &Lunatic::Camera::worldToScreen);
+
+rttr::registration::class_<Lunatic::SoundEmitter>("SoundEmitter")
+CONSTRUCT_IMPL(SoundEmitter)
+.property("soundPath", &Lunatic::SoundEmitter::getSoundPath, &Lunatic::SoundEmitter::setSoundPath)
+.property("looping", &Lunatic::SoundEmitter::isLooping, &Lunatic::SoundEmitter::setLooping)
+.property_readonly("isPlaying", &Lunatic::SoundEmitter::isPlaying)
+.method("play", &Lunatic::SoundEmitter::play);
 }

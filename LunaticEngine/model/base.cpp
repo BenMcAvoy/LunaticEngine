@@ -65,6 +65,9 @@ nlohmann::json Instance::serialize() const {
 	for (const auto& prop : props) {
 		auto propName = prop.get_name().to_string();
 		rttr::variant obj = std::ref(const_cast<Instance&>(*this));
+		// if it's readonly, skip it (why save data we can't load back?)
+		if (prop.is_readonly()) continue;
+
 		auto propValue = prop.get_value(obj);
 		if (propValue.is_valid()) {
 			if (propValue.is_type<int>()) {

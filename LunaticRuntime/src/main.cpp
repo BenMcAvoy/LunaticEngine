@@ -5,6 +5,7 @@
 #include "model/primitives/script.h"
 #include "model/primitives/camera.h"
 #include "model/primitives/nativescript.h"
+#include "model/primitives/sound.h"
 
 #include <iostream>
 
@@ -62,6 +63,9 @@ int main(int argc, char** argv) {
 
 		auto script = AddObjectTo<Lunatic::Script>("GameLogic", board);
 		script->loadCode("game.lua");
+
+		auto clickSFX = AddObjectTo<Lunatic::SoundEmitter>("ClickSFX", board);
+		clickSFX->setSoundPath("click.wav");
 
 		// ========================== //
 

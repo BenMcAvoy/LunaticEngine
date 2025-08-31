@@ -20,10 +20,6 @@
                 1.0,
                 1.0
             ],
-            "viewportSize": [
-                1123.0,
-                746.0
-            ],
             "zoom": 1.0
         },
         {
@@ -223,6 +219,12 @@
                     "className": "Script",
                     "codePath": "game.lua",
                     "name": "GameLogic"
+                },
+                {
+                    "className": "SoundEmitter",
+                    "looping": false,
+                    "name": "SoundEmitter",
+                    "soundPath": "click.wav"
                 }
             ],
             "className": "Instance",
@@ -245,8 +247,8 @@
             ],
             "name": "Cursor",
             "position": [
-                0.0,
-                0.0
+                1.1666667461395264,
+                1.0
             ],
             "rotation": 0.0,
             "scale": [

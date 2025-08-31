@@ -17,6 +17,11 @@ std::shared_ptr<T> AddObjectTo(std::string name, std::shared_ptr<Lunatic::Instan
 int main(int argc, char** argv) {
     GLFWwindow* window = createWindow(1280, 720, "Lunatic Editor");
 
+	// Change CWD to ../LunaticRuntime if it exists
+    if (std::filesystem::exists("../LunaticRuntime")) {
+        std::filesystem::current_path("../LunaticRuntime");
+    }
+
 	Lunatic::Engine& engine = Lunatic::Engine::getInstance();
 	engine.init(window, false);
 	engine.setAutoResizeRenderer(false);
@@ -24,7 +29,7 @@ int main(int argc, char** argv) {
 	ImGui_ImplGlfw_InitForOpenGL(window, true);
 	ImGui_ImplOpenGL3_Init("#version 460");
 
-	auto path = "../LunaticRuntime/scene.json";
+	auto path = "scene.json";
 	std::ifstream inFile(path);
 	nlohmann::json sceneJson;
     inFile >> sceneJson;
@@ -85,6 +90,11 @@ int main(int argc, char** argv) {
                         outFile << json.dump(4);
                     }
                     else {
+                        // ensure no stale pointers remain in engine registries
+                        auto& upd = engine.getUpdateables();
+                        auto& rnd = engine.getRenderables();
+                        upd.clear();
+                        rnd.clear();
 						// clear the current scene
 						engine.rootInstance->clearChildren();
 

@@ -31,7 +31,7 @@ Modern 2D engine and editor focused on fast iteration - OpenGL 4.6, ImGui dockin
 - [x] Lua coroutines
 - [x] Reflection based API
 - [x] JSON serialization/deserialization
-- [ ] Audio support
+- [x] Audio support
 - [ ] Physics engine
 
 ## Features

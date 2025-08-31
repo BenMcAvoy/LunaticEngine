@@ -173,6 +173,7 @@
     <ClInclude Include="model\primitives\nativescript.h" />
     <ClInclude Include="model\base.h" />
     <ClInclude Include="model\primitives\script.h" />
+    <ClInclude Include="model\primitives\sound.h" />
     <ClInclude Include="model\primitives\sprite.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="render\framebuffer.h" />
@@ -185,6 +186,7 @@
     <ClCompile Include="core\engine.cpp" />
     <ClCompile Include="model\primitives\camera.cpp" />
     <ClCompile Include="model\primitives\nativescript.cpp" />
+    <ClCompile Include="model\primitives\sound.cpp" />
     <ClCompile Include="model\reflection.cpp" />
     <ClCompile Include="model\base.cpp" />
     <ClCompile Include="model\primitives\script.cpp" />
@@ -199,6 +201,12 @@
     <ClCompile Include="render\renderer.cpp" />
     <ClCompile Include="render\shader.cpp" />
     <ClCompile Include="render\texture.cpp" />
+    <ClCompile Include="vendor\miniaudio.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="vendor\stb.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>

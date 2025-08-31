@@ -4,6 +4,8 @@
 -- Polished: proper texture/color handling, reset, hover, restart delay, and win highlight.
 
 local camera = root:findChildByName("MainCamera")
+local soundEmitter = script.parent:findChildByName("SoundEmitter")
+
 local placingX = true -- true = human (X), false = AI (O)
 
 -- Restart delay in seconds
@@ -34,12 +36,16 @@ end
 
 -- Helpers to set X and O (ensures texture + white color)
 local function placeXAt(x, y)
+	soundEmitter.soundPath = "click.wav"
+	soundEmitter:play()
 	boardSprites[x][y][2] = 1
 	boardSprites[x][y][1].texturePath = randomVariantTexture("cursor")
 	boardSprites[x][y][1].color = vec4.new(1, 1, 1, 1)
 end
 
 local function placeOAt(x, y)
+	soundEmitter.soundPath = "clickBack.wav"
+	soundEmitter:play()
 	boardSprites[x][y][2] = 2
 	boardSprites[x][y][1].texturePath = randomVariantTexture("circle")
 	boardSprites[x][y][1].color = vec4.new(1, 1, 1, 1)
@@ -220,6 +226,14 @@ local function showResultThenRestart(win, winCells)
 	if win ~= 0 and winCells then
 		applyWinHighlight(winCells)
 	end
+
+	if win == 0 then
+		soundEmitter.soundPath = "powerUp.wav"
+	else
+		soundEmitter.soundPath = "explosion.wav"
+	end
+
+	soundEmitter:play()
 
 	local start = os.clock()
 	while (os.clock() - start) < RESTART_SECONDS do

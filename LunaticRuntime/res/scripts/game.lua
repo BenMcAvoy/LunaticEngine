@@ -36,18 +36,18 @@ end
 
 -- Helpers to set X and O (ensures texture + white color)
 local function placeXAt(x, y)
-	soundEmitter.soundPath = "click.wav"
+	soundEmitter.soundPath = "res/sounds/click.wav"
 	soundEmitter:play()
 	boardSprites[x][y][2] = 1
-	boardSprites[x][y][1].texturePath = randomVariantTexture("cursor")
+	boardSprites[x][y][1].texturePath = randomVariantTexture("res/textures/cursors/cursor")
 	boardSprites[x][y][1].color = vec4.new(1, 1, 1, 1)
 end
 
 local function placeOAt(x, y)
-	soundEmitter.soundPath = "clickBack.wav"
+	soundEmitter.soundPath = "res/sounds/clickBack.wav"
 	soundEmitter:play()
 	boardSprites[x][y][2] = 2
-	boardSprites[x][y][1].texturePath = randomVariantTexture("circle")
+	boardSprites[x][y][1].texturePath = randomVariantTexture("res/textures/circles/circle")
 	boardSprites[x][y][1].color = vec4.new(1, 1, 1, 1)
 end
 
@@ -228,9 +228,9 @@ local function showResultThenRestart(win, winCells)
 	end
 
 	if win == 0 then
-		soundEmitter.soundPath = "powerUp.wav"
+		soundEmitter.soundPath = "res/sounds/powerUp.wav"
 	else
-		soundEmitter.soundPath = "explosion.wav"
+		soundEmitter.soundPath = "res/sounds/explosion.wav"
 	end
 
 	soundEmitter:play()

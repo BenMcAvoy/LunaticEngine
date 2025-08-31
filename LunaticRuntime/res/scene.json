@@ -40,7 +40,7 @@
                 4.0,
                 4.0
             ],
-            "texturePath": "paper.png"
+            "texturePath": "res/textures/paper.png"
         },
         {
             "children": [
@@ -217,14 +217,14 @@
                 },
                 {
                     "className": "Script",
-                    "codePath": "game.lua",
+                    "codePath": "res/scripts/game.lua",
                     "name": "GameLogic"
                 },
                 {
                     "className": "SoundEmitter",
                     "looping": false,
                     "name": "SoundEmitter",
-                    "soundPath": "click.wav"
+                    "soundPath": "res/sounds/click.wav"
                 }
             ],
             "className": "Instance",
@@ -234,7 +234,7 @@
             "children": [
                 {
                     "className": "Script",
-                    "codePath": "cursor.lua",
+                    "codePath": "res/scripts/cursor.lua",
                     "name": "CursorScript"
                 }
             ],
@@ -255,7 +255,7 @@
                 0.4000000059604645,
                 0.4000000059604645
             ],
-            "texturePath": "cursor1.png"
+            "texturePath": "res/textures/cursors/cursor1.png"
         },
         {
             "className": "Instance",

@@ -169,10 +169,6 @@
       <Project>{1a65e30f-d3b4-44ba-9d57-0aa0b0f90d50}</Project>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup>
-    <None Include="cursor.lua" />
-    <None Include="game.lua" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

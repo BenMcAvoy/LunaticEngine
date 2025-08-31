@@ -29,7 +29,7 @@ int main(int argc, char** argv) {
 	ImGui_ImplGlfw_InitForOpenGL(window, true);
 	ImGui_ImplOpenGL3_Init("#version 460");
 
-	auto path = "scene.json";
+	auto path = "res/scene.json";
 	std::ifstream inFile(path);
 	nlohmann::json sceneJson;
     inFile >> sceneJson;

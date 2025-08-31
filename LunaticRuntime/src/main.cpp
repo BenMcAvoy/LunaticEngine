@@ -27,7 +27,7 @@ int main(int argc, char** argv) {
 	auto& rootInstance = engine.rootInstance;
 
 	if (1) {
-		std::ifstream inFile("scene.json");
+		std::ifstream inFile("res/scene.json");
 		if (inFile.is_open()) {
 			nlohmann::json sceneJson;
 			try {

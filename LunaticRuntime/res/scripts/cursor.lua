@@ -11,7 +11,7 @@ while true do
 	local worldPos = camera:screenToWorld(mousePos)
 
 	cursor.position = worldPos
-	cursor.texturePath = "cursor"..textureIndex..".png"
+	cursor.texturePath = "res/textures/cursors/cursor"..textureIndex..".png"
 
 	calls = calls + 1
 	if calls >= 20 then

@@ -13,6 +13,21 @@ Script::Script(std::string_view name) : Instance(name), Updateable() {
     typeInfo = rttr::type::get<Script>();
 }
 
+rttr::variant solFNToRTTR(sol::object obj) {
+    if (obj.get_type() == sol::type::function) {
+        auto fn = obj.as<sol::function>();
+		// TODO: This could probably be a std::span
+        return std::function<sol::object(const std::vector<sol::object>&)>(
+            [fn](const std::vector<sol::object>& args) -> sol::object {
+                return fn(sol::as_args(args));
+            }
+        );
+    }
+
+    spdlog::warn("Tried to parse a non-function as function... none");
+    return {};
+}
+
 rttr::variant solToRTTR(sol::object obj) {
     auto type = obj.get_type();
 
@@ -30,8 +45,7 @@ rttr::variant solToRTTR(sol::object obj) {
     case sol::type::boolean:
         return obj.as<bool>();
     case sol::type::function:
-        spdlog::warn("Tried to parse a function... none");
-        return {};
+		return solFNToRTTR(obj);
     case sol::type::userdata:
         if (obj.is<glm::vec2>()) {
             auto& vec2 = obj.as<glm::vec2>();
@@ -179,6 +193,8 @@ void Script::loadCode(std::string path) {
 
                         std::vector<rttr::argument> args;
                         args.reserve(arg_count);
+                        std::vector<rttr::variant> arg_storage;
+                        arg_storage.reserve(arg_count);
 
                         std::vector<std::string> strs;
                         strs.reserve(arg_count);
@@ -189,7 +205,8 @@ void Script::loadCode(std::string path) {
 								spdlog::trace("Pushed string arg: {}", str);
 								strs.emplace_back(str);
 
-                                args.emplace_back(std::string_view(strs.back()));
+                                arg_storage.emplace_back(rttr::variant(std::string_view(strs.back())));
+                                args.emplace_back(arg_storage.back());
                             }
                             else {
                                 auto res = solToRTTR(*it);
@@ -197,7 +214,8 @@ void Script::loadCode(std::string path) {
                                     spdlog::warn("Invalid argument variant");
                                     return sol::make_object(ts, sol::nil);
 								}
-								args.emplace_back(res);
+                                arg_storage.emplace_back(res);
+                                args.emplace_back(arg_storage.back());
                             }
                         }
 

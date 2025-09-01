@@ -3,6 +3,8 @@
 #include "engine.h"
 #include "render/renderer.h"
 
+#include "model/primitives/physicssprite.h"
+
 using namespace Lunatic;
 
 Engine& Engine::getInstance() {
@@ -99,6 +101,8 @@ void Engine::init(GLFWwindow* externalWindow, bool initLibs) {
 			return;
 		}
 
+		glfwWindowHint(GLFW_SAMPLES, 4);  
+
 		glfwSetErrorCallback(winErrorCallback);
 		glfwWindow_ = glfwCreateWindow(windowWidth_, windowHeight_, windowTitle_, nullptr, nullptr);
 		glfwMakeContextCurrent(glfwWindow_);
@@ -138,11 +142,13 @@ void Engine::init(GLFWwindow* externalWindow, bool initLibs) {
 			spdlog::critical("Failed to initialize GLAD");
 			return;
 		}
+		glEnable(GL_MULTISAMPLE);
 
 		// Initialize ImGui
 		IMGUI_CHECKVERSION();
 		ImGui::CreateContext();
 		ImGuiIO& io = ImGui::GetIO(); (void)io;
+
 		io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;         // Enable Docking
 		ImGui::StyleColorsDark();
 
@@ -184,14 +190,17 @@ void Engine::run() {
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
 
+		// Show FPS in top left (draw list, green text)
+		auto dl = ImGui::GetForegroundDrawList();
+		dl->AddText(ImVec2(10, 10), IM_COL32(0, 255, 0, 255), std::format("FPS: {:.1f}", ImGui::GetIO().Framerate).c_str());
+
 		renderer_.render(renderables_);
 		//luaManager_.resume(); // Resume yielded scripts
 
-		for (const auto& updateable : updateables_) {
-			if (updateable) {
+		for (const auto& updateable : updateables_)
+			if (updateable)
 				updateable->update();
-			}
-		}
+		PhysicsSprite::stepAll(1.0f / 60.0f); // Fixed timestep for physics (we should fix this)
 
 		/*
 		if (ImGui::Begin("Renderables list")) {
@@ -817,7 +826,7 @@ void Engine::unregisterRenderable(Renderable* renderable) {
         std::iter_swap(it, renderables_.end() - 1);
         renderables_.pop_back();
 	} else {
-		spdlog::trace("Tried to unregister non-registered Renderable {:X}", reinterpret_cast<uintptr_t>(renderable));
+		//spdlog::trace("Tried to unregister non-registered Renderable {:X}", reinterpret_cast<uintptr_t>(renderable));
     }
 }
 

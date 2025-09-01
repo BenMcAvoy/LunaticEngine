@@ -5,6 +5,7 @@
 #include "primitives/camera.h"
 #include "primitives/nativescript.h"
 #include "primitives/sound.h"
+#include "primitives/physicssprite.h"
 
 extern "C" void _force_link_anchor() {}
 
@@ -23,7 +24,8 @@ rttr::registration::class_<Lunatic::Instance>("Instance")
 .property_readonly("className", &Lunatic::Instance::getClassName)
 .method("findChildByName", &Lunatic::Instance::findChildByName)
 .method("getChildren", &Lunatic::Instance::getChildren)
-.method("isA", &Lunatic::Instance::isA);
+.method("isA", &Lunatic::Instance::isA)
+.method("destroy", &Lunatic::Instance::destroy);
 
 rttr::registration::class_<Lunatic::Renderable>("Renderable")
 .property("position", &Lunatic::Renderable::getPosition, &Lunatic::Renderable::setPosition)
@@ -61,4 +63,20 @@ CONSTRUCT_IMPL(SoundEmitter)
 .property("looping", &Lunatic::SoundEmitter::isLooping, &Lunatic::SoundEmitter::setLooping)
 .property_readonly("isPlaying", &Lunatic::SoundEmitter::isPlaying)
 .method("play", &Lunatic::SoundEmitter::play);
+
+rttr::registration::class_<Lunatic::PhysicsSprite>("PhysicsSprite")
+CONSTRUCT_IMPL(PhysicsSprite)
+.property("bodyType", &Lunatic::PhysicsSprite::getBodyType, &Lunatic::PhysicsSprite::setBodyType)
+.property("bullet", &Lunatic::PhysicsSprite::getBullet, &Lunatic::PhysicsSprite::setBullet)
+.property("force", &Lunatic::PhysicsSprite::getForce, &Lunatic::PhysicsSprite::setForce)
+.property("forcePoint", &Lunatic::PhysicsSprite::getForcePoint, &Lunatic::PhysicsSprite::setForcePoint)
+.property("linearImpulse", &Lunatic::PhysicsSprite::getLinearImpulse, &Lunatic::PhysicsSprite::setLinearImpulse)
+.property("impulsePoint", &Lunatic::PhysicsSprite::getImpulsePoint, &Lunatic::PhysicsSprite::setImpulsePoint)
+.property("forceToCenter", &Lunatic::PhysicsSprite::getForceToCenter, &Lunatic::PhysicsSprite::setForceToCenter)
+.property("linearImpulseToCenter", &Lunatic::PhysicsSprite::getLinearImpulseToCenter, &Lunatic::PhysicsSprite::setLinearImpulseToCenter)
+.property("torque", &Lunatic::PhysicsSprite::getTorque, &Lunatic::PhysicsSprite::setTorque)
+.property("linearVelocity", &Lunatic::PhysicsSprite::getLinearVelocity, &Lunatic::PhysicsSprite::setLinearVelocity)
+.property("angularVelocity", &Lunatic::PhysicsSprite::getAngularVelocity, &Lunatic::PhysicsSprite::setAngularVelocity)
+.property("fixedRotation", &Lunatic::PhysicsSprite::getFixedRotation, &Lunatic::PhysicsSprite::setFixedRotation)
+.method("setOnCollisionEnter", &Lunatic::PhysicsSprite::setOnCollisionEnter);
 }

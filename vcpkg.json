@@ -18,11 +18,12 @@
       ]
     },
     "luajit",
+    "miniaudio",
     "nlohmann-json",
     "rttr",
     "sol2",
     "spdlog",
     "stb",
-    "miniaudio"
+  { "name": "box2d", "version>=" : "3.1.1" }
   ]
 }

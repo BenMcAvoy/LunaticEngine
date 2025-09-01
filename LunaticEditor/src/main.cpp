@@ -6,6 +6,7 @@
 #include "core/engine.h"
 #include "render/framebuffer.h"
 #include "model/primitives/sprite.h"
+#include "model/primitives/physicssprite.h"
 
 template <typename T>
 std::shared_ptr<T> AddObjectTo(std::string name, std::shared_ptr<Lunatic::Instance> parent) {
@@ -271,6 +272,7 @@ int main(int argc, char** argv) {
             for (auto& updateable : engine.getUpdateables()) {
                 updateable->update();
             }
+			Lunatic::PhysicsSprite::stepAll(1.0f / 60.0f);
 		}
 
         if (showViewportWindow) {

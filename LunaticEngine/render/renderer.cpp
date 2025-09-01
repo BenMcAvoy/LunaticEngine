@@ -12,7 +12,7 @@ void Renderer::registerMainCamera(Camera* camera) {
 
 void Renderer::render(const std::vector<Renderable*>& renderables) {
 	if (!state_) {
-		spdlog::info("Renderer::render initializing RenderState");
+		spdlog::debug("Renderer static data RenderState initialized");
 		state_ = std::make_shared<RenderState>();
 	}
 
@@ -22,7 +22,7 @@ void Renderer::render(const std::vector<Renderable*>& renderables) {
 	for (auto* renderable : renderables) {
 		auto model = glm::mat4(1.0f);
 		model = glm::translate(model, glm::vec3(renderable->position, 0.0f));
-		model = glm::rotate(model, glm::radians(renderable->rotation), glm::vec3(0.0f, 0.0f, -1.0f));
+		model = glm::rotate(model, glm::radians(renderable->rotation), glm::vec3(0.0f, 0.0f, 1.0f));
 		model = glm::scale(model, glm::vec3(renderable->scale, 1.0f));
 		state_->defaultShader.set("u_model", model);
 		state_->defaultShader.set("u_colour", renderable->color);
@@ -32,7 +32,7 @@ void Renderer::render(const std::vector<Renderable*>& renderables) {
 
 void Renderer::resize(int width, int height) {
 	if (!state_) {
-		spdlog::info("Renderer::render initializing RenderState");
+		spdlog::debug("Renderer static data RenderState initialized");
 		state_ = std::make_shared<RenderState>();
 	}
 

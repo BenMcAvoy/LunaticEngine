@@ -32,7 +32,9 @@ Modern 2D engine and editor focused on fast iteration - OpenGL 4.6, ImGui dockin
 - [x] Reflection based API
 - [x] JSON serialization/deserialization
 - [x] Audio support
-- [ ] Physics engine
+- [x] Physics integration
+- [ ] `std::vector` usage reviewed (where can be `std::span`?)
+- [ ] Reflection codegen
 
 ## Features
 

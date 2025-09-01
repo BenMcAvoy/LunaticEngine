@@ -48,16 +48,16 @@ namespace Lunatic {
 
 	class Renderable {
 	public:
-		void setPosition(const glm::vec2& pos) { position = pos; }
+		virtual void setPosition(const glm::vec2& pos) { position = pos; }
 		const glm::vec2& getPosition() const { return position; }
 
-		void setScale(const glm::vec2& scl) { scale = scl; }
+		virtual void setScale(const glm::vec2& scl) { scale = scl; }
 		const glm::vec2& getScale() const { return scale; }
 
 		void setColor(const glm::vec4& col) { color = col; }
 		const glm::vec4& getColor() const { return color; }
 
-		void setRotation(float rot) { rotation = rot; }
+		virtual void setRotation(float rot) { rotation = rot; }
 		float getRotation() const { return rotation; }
 
 		glm::vec2 position = { 0.0f, 0.0f };

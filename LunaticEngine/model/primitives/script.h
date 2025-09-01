@@ -23,6 +23,10 @@ namespace Lunatic {
 
 		virtual void update() override;
 
+		static sol::state_view getLuaState() {
+			return lua_;
+		}
+
 		RTTR_ENABLE(Instance, Updateable);
 		RTTR_REGISTRATION_FRIEND;
 	private:

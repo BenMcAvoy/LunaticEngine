@@ -5,6 +5,20 @@
 #include "render/shader.h"
 
 namespace Lunatic {
+	class LuaUserData {
+	public:
+		LuaUserData() = default;
+		~LuaUserData() = default;
+
+		void set(std::string key, sol::stack_object value);
+		sol::object get(std::string key);
+		int size() const { return static_cast<int>(entries_.size()); }
+		void clear() { entries_.clear(); }
+
+	private:
+		std::unordered_map<std::string, sol::object> entries_;
+	};
+
 	class Instance : public std::enable_shared_from_this<Instance> {
 	protected:
 		std::string name_;
@@ -16,6 +30,7 @@ namespace Lunatic {
 		virtual ~Instance() = default;
 
 		rttr::type typeInfo;
+		LuaUserData luaUserData;
 
 		std::string_view getName() const;
 		void setName(std::string_view name);

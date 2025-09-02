@@ -4,85 +4,13 @@
 #include "render/renderer.h"
 
 #include "model/primitives/physicssprite.h"
+#include "model/primitives/script.h"
 
 using namespace Lunatic;
 
 Engine& Engine::getInstance() {
 	static Engine instance;
 	return instance;
-}
-
-template <size_t MAX_FRAMES>
-struct StatBuffer {
-    std::array<float, MAX_FRAMES> values{};
-    int index = 0;
-
-    void add(float v) {
-        values[index] = v;
-        index = (index + 1) % MAX_FRAMES;
-    }
-
-    const float* data() const { return values.data(); }
-    int offset() const { return index; }
-    int size() const { return MAX_FRAMES; }
-};
-
-void renderStats(float dt, int renderableCount) {
-    static constexpr int MAX_FRAMES = 240; // ~4 seconds at 60fps
-    static StatBuffer<MAX_FRAMES> frameTimes;
-    static StatBuffer<MAX_FRAMES> fpsValues;
-    static StatBuffer<MAX_FRAMES> renderableCounts;
-
-    // Frame timing
-    float frameTimeMs = dt * 1000.0f;
-    float fps = (dt > 0.0f) ? 1.0f / dt : 0.0f;
-
-    // Record values
-    frameTimes.add(frameTimeMs);
-    fpsValues.add(fps);
-    renderableCounts.add((float)renderableCount);
-
-    // Window
-    ImGui::Begin("Performance Stats");
-
-    ImGui::PlotLines(
-        "Frame Time", frameTimes.data(), frameTimes.size(),
-        frameTimes.offset(), nullptr,
-        0.0f, 50.0f, ImVec2(0, 80)
-    );
-
-    // FPS
-    ImGui::PlotLines(
-        "Frames Per Second", fpsValues.data(), fpsValues.size(),
-        fpsValues.offset(), nullptr,
-        0.0f, 120.0f, ImVec2(0, 80)
-    );
-
-    // Entity Count
-    ImGui::PlotLines(
-        "Renderable Count", renderableCounts.data(), renderableCounts.size(),
-        renderableCounts.offset(), nullptr,
-        0.0f, 5000.0f, ImVec2(0, 80)
-    );
-
-    // Some live numbers
-    ImGui::Separator();
-    ImGui::Text("Current Frame Time: %.2f ms", frameTimeMs);
-    ImGui::Text("Current FPS: %.1f", fps);
-	ImGui::Text("Average Frame Time: %.2f ms", std::accumulate(frameTimes.data(), frameTimes.data() + frameTimes.size(), 0.0f) / frameTimes.size());
-	ImGui::Text("Average FPS: %.1f", std::accumulate(fpsValues.data(), fpsValues.data() + fpsValues.size(), 0.0f) / fpsValues.size());
-	ImGui::Text("Average FPS (imgui reports): %.1f", ImGui::GetIO().Framerate);
-	ImGui::Text("Instance Count: %d", renderableCount);
-
-	ImGui::Separator();
-
-	// Manipulation of hierarchy stuff
-	if (ImGui::Button("New Instance")) {
-		auto newInstance = std::make_shared<Instance>("New Instance");
-		newInstance->setParent(Engine::getInstance().rootInstance);
-	}
-
-    ImGui::End();
 }
 
 void Engine::init(GLFWwindow* externalWindow, bool initLibs) {
@@ -202,280 +130,23 @@ void Engine::run() {
 				updateable->update();
 		PhysicsSprite::stepAll(1.0f / 60.0f); // Fixed timestep for physics (we should fix this)
 
-		/*
-		if (ImGui::Begin("Renderables list")) {
-			{
-				ImGuiListClipper clipper;
-				clipper.Begin(static_cast<int>(renderables_.size()));
-				while (clipper.Step()) {
-					for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; ++i) {
-						auto* renderable = renderables_[i];
-						if (renderable) {
-							ImGui::Text("0x%p", static_cast<void*>(renderable));
-							ImGui::SameLine();
-							ImGui::PushID(renderable);
-							if (ImGui::SmallButton("Copy")) {
-								ImGui::SetClipboardText(std::format("0x{:X}", reinterpret_cast<uintptr_t>(renderable)).c_str());
-							}
-							ImGui::PopID();
-						}
-						else {
-							ImGui::Text("Renderable: nullptr");
-						}
-					}
-				}
-			}
-		}
-		ImGui::End();
-
-		if (ImGui::Begin("Updateables list")) {
-			{
-				ImGuiListClipper clipper;
-				clipper.Begin(static_cast<int>(updateables_.size()));
-				while (clipper.Step()) {
-					for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; ++i) {
-						auto* updateable = updateables_[i];
-						if (updateable) {
-							ImGui::Text("0x%p", static_cast<void*>(updateable));
-							ImGui::SameLine();
-							ImGui::PushID(updateable);
-							if (ImGui::SmallButton("Copy")) {
-								ImGui::SetClipboardText(std::format("0x{:X}", reinterpret_cast<uintptr_t>(updateable)).c_str());
-							}
-							ImGui::PopID();
-						}
-						else {
-							ImGui::Text("Updateable: nullptr");
-						}
-					}
-				}
-			}
-		}
-		ImGui::End();
-
-		// --- Instance Hierarchy and Inspector ---
-		if (ImGui::Begin("Instance Hierarchy")) {
-			std::function<void(const std::shared_ptr<Instance>&)> drawNode;
-			drawNode = [&](const std::shared_ptr<Instance>& node) {
-				if (!node) return;
-
-				const auto& children = node->getChildren();
-				bool hasChildren = !children.empty();
-
-				ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_SpanAvailWidth;
-				// If no children, make it a leaf without arrow and don't allow opening
-				if (!hasChildren) {
-					flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
-				}
-
-				bool isSelected = !selectedInstance_.expired() && selectedInstance_.lock().get() == node.get();
-				if (isSelected) flags |= ImGuiTreeNodeFlags_Selected;
-
-				bool open = false;
-				if (hasChildren) {
-					open = ImGui::TreeNodeEx(static_cast<void*>(node.get()), flags, "%s", node->getName().data());
-				}
-				else {
-					ImGui::TreeNodeEx(static_cast<void*>(node.get()), flags, "%s", node->getName().data());
-				}
-
-				// Selection handling
-				if (ImGui::IsItemClicked()) {
-					selectedInstance_ = node;
-					inspectorNameBuffer_ = std::string(node->getName());
-				}
-
-				// Recurse if opened
-				if (hasChildren && open) {
-					ImGuiListClipper clipper;
-					clipper.Begin(static_cast<int>(children.size()));
-					while (clipper.Step()) {
-						for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; ++i) {
-							drawNode(children[i]);
-						}
-					}
-					ImGui::TreePop();
-				}
-				};
-
-			drawNode(rootInstance);
-		}
-		ImGui::End();
-
-		if (ImGui::Begin("Instance Inspector")) {
-			if (auto sel = selectedInstance_.lock()) {
-				ImGui::Text("Address: 0x%p", static_cast<void*>(sel.get()));
-				ImGui::Text("Class: %s", std::string(sel->getClassName()).c_str());
-				if (auto parent = sel->getParent()) {
-					ImGui::Text("Parent: %s (0x%p)", std::string(parent->getName()).c_str(), static_cast<void*>(parent.get()));
-				}
-				else {
-					ImGui::Text("Parent: <none>");
-				}
-
-				// Name edit
-				ImGui::Separator();
-				ImGui::Text("Edit");
-				char buf[256] = {};
-				strncpy_s(buf, inspectorNameBuffer_.c_str(), IM_ARRAYSIZE(buf));
-				if (ImGui::InputText("Name", buf, IM_ARRAYSIZE(buf))) {
-					inspectorNameBuffer_ = buf;
-				}
-				ImGui::SameLine();
-				if (ImGui::SmallButton("Apply")) {
-					sel->setName(inspectorNameBuffer_);
-				}
-
-				ImGui::Separator();
-
-				auto& ti = sel->typeInfo;
-				auto props = ti.get_properties();
-				ImGui::Text("Properties: %d", static_cast<int>(props.size()));
-				{
-					for (const auto& prop : props) {
-						auto name = prop.get_name().to_string();
-						auto type = prop.get_type();
-						auto value = prop.get_value(sel);
-						if (!value) continue; // Skip invalid values
-
-						ImGui::PushID(name.c_str());
-						ImGui::BeginDisabled(prop.is_readonly());
-
-						if (type.is_arithmetic()) {
-							if (type == rttr::type::get<int>()) {
-								int v = value.to_int();
-								if (ImGui::InputInt(name.c_str(), &v)) {
-									prop.set_value(sel, v);
-								}
-							}
-							else if (type == rttr::type::get<float>()) {
-								float v = value.to_float();
-								if (ImGui::InputFloat(name.c_str(), &v)) {
-									prop.set_value(sel, v);
-								}
-							}
-							else if (type == rttr::type::get<double>()) {
-								double v = value.to_double();
-								if (ImGui::InputDouble(name.c_str(), &v)) {
-									prop.set_value(sel, v);
-								}
-							}
-							else if (type == rttr::type::get<bool>()) {
-								bool v = value.to_bool();
-								if (ImGui::Checkbox(name.c_str(), &v)) {
-									prop.set_value(sel, v);
-								}
-							}
-							else {
-								ImGui::Text("%s: <unhandled arithmetic type>", name.c_str());
-							}
-						}
-						else if (type.is_class()) {
-							if (type == rttr::type::get<std::string>()) {
-								std::string v = value.to_string();
-								char strBuf[256];
-								strncpy_s(strBuf, v.c_str(), sizeof(strBuf));
-								if (ImGui::InputText(name.c_str(), strBuf, sizeof(strBuf))) {
-									prop.set_value(sel, std::string(strBuf));
-								}
-							}
-							else if (type == rttr::type::get<std::string_view>()) {
-								std::string v = value.to_string();
-								char strBuf[256];
-								strncpy_s(strBuf, v.c_str(), sizeof(strBuf));
-								if (ImGui::InputText(name.c_str(), strBuf, sizeof(strBuf))) {
-									std::string_view sv(strBuf);
-									prop.set_value(sel, sv);
-								}
-							} else if (type == rttr::type::get<glm::vec2>()) {
-								glm::vec2 v = value.get_value<glm::vec2>();
-								if (ImGui::InputFloat2(name.c_str(), &v.x)) {
-									prop.set_value(sel, v);
-								}
-							}
-							else if (type == rttr::type::get<glm::vec3>()) {
-								glm::vec3 v = value.get_value<glm::vec3>();
-								if (ImGui::InputFloat3(name.c_str(), &v.x)) {
-									prop.set_value(sel, v);
-								}
-							}
-							else if (type == rttr::type::get<glm::vec4>()) {
-								glm::vec4 v = value.get_value<glm::vec4>();
-								if (ImGui::InputFloat4(name.c_str(), &v.x)) {
-									prop.set_value(sel, v);
-								}
-							}
-							else if (type == rttr::type::get<glm::quat>()) {
-								glm::quat v = value.get_value<glm::quat>();
-								float euler[3] = {};
-								// Convert quat to euler angles for editing
-								glm::vec3 eulerVec = glm::eulerAngles(v);
-								euler[0] = glm::degrees(eulerVec.x);
-								euler[1] = glm::degrees(eulerVec.y);
-								euler[2] = glm::degrees(eulerVec.z);
-								if (ImGui::InputFloat3(name.c_str(), euler)) {
-									// Convert back to quat
-									glm::vec3 newEuler = glm::radians(glm::vec3(euler[0], euler[1], euler[2]));
-									glm::quat newQuat = glm::quat(newEuler);
-									prop.set_value(sel, newQuat);
-								}
-							}
-							else if (type == rttr::type::get<rttr::variant>()) {
-								ImGui::Text("%s: <variant>", name.c_str());
-							}
-							else if (type == rttr::type::get<std::shared_ptr<Instance>>()) {
-								auto inst = value.get_value<std::shared_ptr<Instance>>();
-								if (inst) {
-									ImGui::Text("%s: %s (0x%p)", name.c_str(), std::string(inst->getName()).c_str(), static_cast<void*>(inst.get()));
-								}
-								else {
-									ImGui::Text("%s: <null>", name.c_str());
-								}
-							}
-							else {
-								ImGui::Text("%s: <unhandled class type>", name.c_str());
-							}
-						}
-						else if (type.is_pointer()) {
-							ImGui::Text("%s: 0x%p", name.c_str(), static_cast<void*>(value.get_value<std::shared_ptr<Instance>>().get()));
-						}
-						else {
-							ImGui::Text("%s: <unhandled type %s>", name.c_str(), type.get_name().to_string().c_str());
-						}
-
-						ImGui::EndDisabled();
-						ImGui::PopID();
-					}
-				}
-
-				ImGui::Separator();
-
-				// Children summary
-				ImGui::Separator();
-				const auto& kids = sel->getChildren();
-				ImGui::Text("Children: %d", static_cast<int>(kids.size()));
-				{
-					ImGuiListClipper clipper;
-					clipper.Begin(static_cast<int>(kids.size()));
-					while (clipper.Step()) {
-						for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; ++i) {
-							const auto& c = kids[i];
-							ImGui::BulletText("%s (0x%p)", std::string(c->getName()).c_str(), static_cast<void*>(c.get()));
-						}
-					}
-				}
-			}
-			else {
-				ImGui::Text("No selection");
-			}
-		}
-		ImGui::End();
-
-		renderStats(ImGui::GetIO().DeltaTime, static_cast<int>(renderables_.size()));*/
-
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 		glfwSwapBuffers(glfwWindow_);
+	}
+}
+
+void Engine::clearAllLuaDataStores() {
+	if (rootInstance) {
+		std::function<void(std::shared_ptr<Instance>)> clearLuaData;
+		clearLuaData = [&](std::shared_ptr<Instance> inst) {
+			if (!inst) return;
+			inst->luaUserData.clear();
+			for (const auto& child : inst->getChildren()) {
+				clearLuaData(child);
+			}
+		};
+		clearLuaData(rootInstance);
 	}
 }
 
@@ -620,8 +291,22 @@ void Engine::winWindowContentScaleCallback(GLFWwindow* window, float xscale, flo
 }
 
 void Engine::winKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods){
-	//std::print("Key event: key={}, scancode={}, action={}, mods={}\n", key, scancode, action, mods);
 	Engine* engine = W2Engine(window);
+
+#ifdef _DEBUG
+	// if the key was R and action is PRESS, reload scripts
+	if (key == GLFW_KEY_R && action == GLFW_PRESS) {
+		spdlog::info("Reloading scripts...");
+
+		auto& upds = engine->getUpdateables();
+		for (const auto& upd : upds) {
+			if (auto script = dynamic_cast<Script*>(upd)) {
+				script->reloadCode();
+			}
+		}
+	}
+#endif
+
 	if (engine) {
 		if (key >= 0 && key < engine->keyActions_.size()) {
 			switch (action) {

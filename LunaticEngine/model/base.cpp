@@ -279,3 +279,22 @@ Updateable::Updateable() {
 Updateable::~Updateable() {
 	Engine::getInstance().unregisterUpdateable(this);
 }
+
+void LuaUserData::set(std::string key, sol::stack_object value) {
+  auto it = entries_.find(key);
+  if (it == entries_.end()) { // not found, insert new
+    entries_.insert(it, {std::move(key), std::move(value)});
+  }
+  else { // found, update existing
+    std::pair<const std::string, sol::object> &kvp = *it;
+    sol::object &entry = kvp.second;
+    entry = sol::object(std::move(value));
+  }
+}
+
+sol::object LuaUserData::get(std::string key) {
+  auto it = entries_.find(key);
+  if (it == entries_.end())
+    return sol::lua_nil;
+  return it->second;
+}

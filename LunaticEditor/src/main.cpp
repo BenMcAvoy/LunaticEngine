@@ -15,6 +15,20 @@ std::shared_ptr<T> AddObjectTo(std::string name, std::shared_ptr<Lunatic::Instan
     return inst;
 }
 
+struct EditorData {
+    bool isPlaying = false;
+
+	bool showViewportWindow = true;
+	bool showHierarchyWindow = true;
+	bool showInspectorWindow = true;
+	bool showConsoleWindow = true;
+
+    bool shouldOpenHelp = false;
+	bool shouldOpenNewInstance = false;
+
+    std::weak_ptr<Lunatic::Instance> selectedInstance;
+};
+
 int main(int argc, char** argv) {
     GLFWwindow* window = createWindow(1280, 720, "Lunatic Editor");
 
@@ -39,17 +53,7 @@ int main(int argc, char** argv) {
 
 	Lunatic::Framebuffer framebuffer;
 
-    bool isPlaying = false;
-
-	bool showViewportWindow = true;
-	bool showHierarchyWindow = true;
-	bool showInspectorWindow = true;
-	bool showConsoleWindow = true;
-
-    bool shouldOpenHelp = false;
-	bool shouldOpenNewInstance = false;
-
-    std::weak_ptr<Lunatic::Instance> selectedInstance;
+	EditorData eD;
 
     renderWith([&](GLFWwindow*) {
         const ImGuiViewport* viewport = ImGui::GetMainViewport();
@@ -85,29 +89,31 @@ int main(int argc, char** argv) {
             }
 
             if (ImGui::BeginMenu("View")) {
-				ImGui::MenuItem("Viewport", nullptr, &showViewportWindow);
-				ImGui::MenuItem("Hierarchy", nullptr, &showHierarchyWindow);
-				ImGui::MenuItem("Inspector", nullptr, &showInspectorWindow);
-				ImGui::MenuItem("Console", nullptr, &showConsoleWindow);
+				ImGui::MenuItem("Viewport", nullptr, &eD.showViewportWindow);
+				ImGui::MenuItem("Hierarchy", nullptr, &eD.showHierarchyWindow);
+				ImGui::MenuItem("Inspector", nullptr, &eD.showInspectorWindow);
+				ImGui::MenuItem("Console", nullptr, &eD.showConsoleWindow);
                 ImGui::EndMenu();
             }
 
             // If we're playing, this menu tab should have a slight highlight
-            bool wasPlaying = isPlaying;
+            bool wasPlaying = eD.isPlaying;
             if (wasPlaying) ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.4f, 0.9f, 0.4f, 1.0f));
 
             if (ImGui::BeginMenu("Game")) {
-				auto text = isPlaying ? "Stop" : "Play";
+				auto text = eD.isPlaying ? "Stop" : "Play";
                 if (ImGui::MenuItem(text)) {
-                    isPlaying = !isPlaying;
+                    eD.isPlaying = !eD.isPlaying;
 
-                    if (isPlaying) {
+                    if (eD.isPlaying) {
                         // save the scene to tempScene.json
                         auto json = engine.rootInstance->serialize();
                         std::ofstream outFile("tempScene.json");
                         outFile << json.dump(4);
                     }
                     else {
+                        engine.clearAllLuaDataStores();
+
                         // ensure no stale pointers remain in engine registries
                         auto& upd = engine.getUpdateables();
                         auto& rnd = engine.getRenderables();
@@ -130,7 +136,7 @@ int main(int argc, char** argv) {
             
             if (ImGui::BeginMenu("Instance") ) {
                 if (ImGui::MenuItem("New")) {
-                    shouldOpenNewInstance = true;
+                    eD.shouldOpenNewInstance = true;
                 }
 
                 ImGui::EndMenu();
@@ -138,7 +144,7 @@ int main(int argc, char** argv) {
 
             if (ImGui::BeginMenu("Help")) {
                 if (ImGui::MenuItem("About")) {
-					shouldOpenHelp = true;
+					eD.shouldOpenHelp = true;
                 }
                 ImGui::EndMenu();
             }
@@ -212,14 +218,14 @@ int main(int argc, char** argv) {
 				std::shared_ptr<Lunatic::Instance> i = obj.get_value<std::shared_ptr<Lunatic::Instance>>();
 
 				// Set the parent to the selected instance, or root if none selected
-                if (auto sel = selectedInstance.lock()) {
+                if (auto sel = eD.selectedInstance.lock()) {
                     i->setParent(sel);
                 } else {
                     i->setParent(engine.rootInstance);
 				}
 
 				// Select the new instance
-				selectedInstance = i;
+				eD.selectedInstance = i;
 
 				// We are done :tada:
                 // clear the name buffer for next time
@@ -230,13 +236,13 @@ int main(int argc, char** argv) {
             ImGui::EndPopup();
         }
 
-        if (shouldOpenHelp) {
+        if (eD.shouldOpenHelp) {
             ImGui::OpenPopup("About Lunatic Editor");
-            shouldOpenHelp = false;
+            eD.shouldOpenHelp = false;
 		}
-        if (shouldOpenNewInstance) {
+        if (eD.shouldOpenNewInstance) {
             ImGui::OpenPopup("Add New Instance");
-            shouldOpenNewInstance = false;
+            eD.shouldOpenNewInstance = false;
         }
 
         ImGui::PopStyleVar(2);
@@ -268,14 +274,14 @@ int main(int argc, char** argv) {
         }
 
 		// If we are in play mode, update the engine
-        if (isPlaying) {
+        if (eD.isPlaying) {
             for (auto& updateable : engine.getUpdateables()) {
                 updateable->update();
             }
 			Lunatic::PhysicsSprite::stepAll(1.0f / 60.0f);
 		}
 
-        if (showViewportWindow) {
+        if (eD.showViewportWindow) {
             static auto viewportSize = ImVec2(800, 600);
             ImGui::Begin("Viewport");
             int display_w, display_h;
@@ -296,12 +302,12 @@ int main(int argc, char** argv) {
             ImGui::End();
         }
 
-        if (showHierarchyWindow) {
+        if (eD.showHierarchyWindow) {
             ImGui::Begin("Hierarchy");
             std::function<void(std::shared_ptr<Lunatic::Instance>)> drawInstanceNode;
             drawInstanceNode = [&](std::shared_ptr<Lunatic::Instance> instance) {
                 ImGuiTreeNodeFlags node_flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
-                if (instance == selectedInstance.lock()) {
+                if (instance == eD.selectedInstance.lock()) {
                     node_flags |= ImGuiTreeNodeFlags_Selected;
                 }
                 if (instance->getChildren().empty()) {
@@ -309,7 +315,7 @@ int main(int argc, char** argv) {
                 }
                 bool node_open = ImGui::TreeNodeEx((void*)(uintptr_t)instance.get(), node_flags, "%s", instance->getName().data());
                 if (ImGui::IsItemClicked()) {
-                    selectedInstance = instance;
+                    eD.selectedInstance = instance;
                 }
                 if (node_open && !(node_flags & ImGuiTreeNodeFlags_NoTreePushOnOpen)) {
                     for (const auto& child : instance->getChildren()) {
@@ -318,15 +324,13 @@ int main(int argc, char** argv) {
                     ImGui::TreePop();
                 }
                 };
-            //drawInstanceNode(engine.rootInstance);
-            for (auto& child : engine.rootInstance->getChildren())
-                drawInstanceNode(child);
+            drawInstanceNode(engine.rootInstance);
             ImGui::End();
         }
 
-        if (showInspectorWindow) {
+        if (eD.showInspectorWindow) {
             ImGui::Begin("Inspector");
-            if (auto sel = selectedInstance.lock()) {
+            if (auto sel = eD.selectedInstance.lock()) {
                 struct TextBuf { std::array<char, 512> buf{}; std::string lastPropValue; bool initialized = false; };
                 static void* lastSelPtr = nullptr;
                 static std::unordered_map<std::string, TextBuf> textBuffers;
@@ -457,10 +461,10 @@ int main(int argc, char** argv) {
                             for (size_t i = 0; i < vec.size(); ++i) {
                                 auto& inst = vec[i];
                                 std::string label = inst ? std::string(inst->getName()) : std::string("<null>");
-                                bool isSel = inst && (inst == selectedInstance.lock());
+                                bool isSel = inst && (inst == eD.selectedInstance.lock());
                                 if (inst) {
                                     if (ImGui::Selectable((label + "##" + std::to_string(i)).c_str(), isSel)) {
-                                        selectedInstance = inst;
+                                        eD.selectedInstance = inst;
                                     }
                                 }
                                 else {
@@ -485,7 +489,7 @@ int main(int argc, char** argv) {
             ImGui::End();
         }
 
-        if (showConsoleWindow) {
+        if (eD.showConsoleWindow) {
             ImGui::Begin("Console");
             ImGui::TextDisabled("No console output yet.");
             ImGui::End();

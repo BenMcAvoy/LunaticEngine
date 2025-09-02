@@ -41,6 +41,8 @@ namespace Lunatic {
 
 		void run();
 
+		void clearAllLuaDataStores();
+
 		KeyAction getKeyState(int key);
 		MouseButtonAction getMouseButtonState(int button);
 		double getMouseX() const;

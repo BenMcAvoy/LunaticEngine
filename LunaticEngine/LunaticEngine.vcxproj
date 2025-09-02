@@ -190,7 +190,10 @@
     <ClCompile Include="model\primitives\sound.cpp" />
     <ClCompile Include="model\reflection.cpp" />
     <ClCompile Include="model\base.cpp" />
-    <ClCompile Include="model\primitives\script.cpp" />
+    <ClCompile Include="model\primitives\script.cpp">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">/bigobj %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">/bigobj %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
     <ClCompile Include="model\primitives\sprite.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>

@@ -6,6 +6,7 @@
 #include "model/primitives/camera.h"
 #include "model/primitives/nativescript.h"
 #include "model/primitives/sound.h"
+#include "model/primitives/physicssprite.h"
 
 #include <iostream>
 

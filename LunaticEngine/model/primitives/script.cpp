@@ -177,60 +177,62 @@ void Script::loadCode(std::string path) {
                     spdlog::warn("Invalid variant");
                     return {};
                 }
-				return rttrToSol(ts, var, key);
+                return rttrToSol(ts, var, key);
             }
-            else {
-                // Not a property, check for method
-                auto method = t.get_method(key.data());
-                if (method.is_valid()) {
-                    auto thunk = [method, obj](sol::this_state ts, sol::variadic_args va) -> sol::object {
-                        auto it = va.begin();
-                        auto end = va.end();
-                        if (it == end) return sol::make_object(ts, sol::nil);
-                        ++it; // skip first
-                        size_t arg_count = 0;
-                        for (auto tmp = it; tmp != end; ++tmp) ++arg_count;
 
-                        std::vector<rttr::argument> args;
-                        args.reserve(arg_count);
-                        std::vector<rttr::variant> arg_storage;
-                        arg_storage.reserve(arg_count);
+            auto method = t.get_method(key.data());
+            if (method.is_valid()) {
+                auto thunk = [method, obj](sol::this_state ts, sol::variadic_args va) -> sol::object {
+                    auto it = va.begin();
+                    auto end = va.end();
+                    if (it == end) return sol::make_object(ts, sol::nil);
+                    ++it; // skip first
+                    size_t arg_count = 0;
+                    for (auto tmp = it; tmp != end; ++tmp) ++arg_count;
 
-                        std::vector<std::string> strs;
-                        strs.reserve(arg_count);
+                    std::vector<rttr::argument> args;
+                    args.reserve(arg_count);
+                    std::vector<rttr::variant> arg_storage;
+                    arg_storage.reserve(arg_count);
 
-                        for (; it != end; ++it) {
-                            if (it->is<std::string_view>()) {
-								std::string str = it->as<std::string>();
-								spdlog::trace("Pushed string arg: {}", str);
-								strs.emplace_back(str);
+                    std::vector<std::string> strs;
+                    strs.reserve(arg_count);
 
-                                arg_storage.emplace_back(rttr::variant(std::string_view(strs.back())));
-                                args.emplace_back(arg_storage.back());
-                            }
-                            else {
-                                auto res = solToRTTR(*it);
-                                if (!res.is_valid()) {
-                                    spdlog::warn("Invalid argument variant");
-                                    return sol::make_object(ts, sol::nil);
-								}
-                                arg_storage.emplace_back(res);
-                                args.emplace_back(arg_storage.back());
-                            }
+                    for (; it != end; ++it) {
+                        if (it->is<std::string_view>()) {
+                            std::string str = it->as<std::string>();
+                            spdlog::trace("Pushed string arg: {}", str);
+                            strs.emplace_back(str);
+
+                            arg_storage.emplace_back(rttr::variant(std::string_view(strs.back())));
+                            args.emplace_back(arg_storage.back());
                         }
+                        else {
+                            auto res = solToRTTR(*it);
+                            if (!res.is_valid()) {
+                                spdlog::warn("Invalid argument variant");
+                                return sol::make_object(ts, sol::nil);
+                            }
+                            arg_storage.emplace_back(res);
+                            args.emplace_back(arg_storage.back());
+                        }
+                    }
 
-                        auto ret = method.invoke_variadic(obj, args);
-                        if (!ret.is_valid()) return sol::make_object(ts, sol::nil);
+                    auto ret = method.invoke_variadic(obj, args);
+                    if (!ret.is_valid()) return sol::make_object(ts, sol::nil);
 
-						return rttrToSol(ts, ret, method.get_name().to_string());
-                        };
-                    return sol::make_object(ts, thunk);
-                }
-                else {
-                    spdlog::warn("No property or method named '{}' in type '{}'", key, t.get_name().to_string());
-                    return {};
-                }
+                    return rttrToSol(ts, ret, method.get_name().to_string());
+                    };
+                return sol::make_object(ts, thunk);
             }
+
+			// see if they are trying to access `data` (`LuaUserData`)
+            if (key == "data") {
+                return sol::make_object(ts, &inst.luaUserData);
+			}
+
+			spdlog::warn("No property or method named '{}' in type '{}'", key, t.get_name().to_string());
+			return sol::nil;
             };
 
         auto newIndexFunc = [](sol::this_state ts, Instance& inst, std::string_view key, sol::object value) {
@@ -277,7 +279,35 @@ void Script::loadCode(std::string path) {
         lua_.new_usertype<glm::vec2>("vec2",
             sol::constructors<glm::vec2(), glm::vec2(float, float)>(),
             "x", &glm::vec2::x,
-            "y", &glm::vec2::y
+            "y", &glm::vec2::y,
+            sol::meta_function::to_string, [](const glm::vec2& v) {
+                return "vec2(" + std::to_string(v.x) + ", " + std::to_string(v.y) + ")";
+			},
+			sol::meta_function::length, [](const glm::vec2&) { return 2; },
+			sol::meta_function::addition, sol::overload(
+                [](const glm::vec2& a, const glm::vec2& b) { return a + b; },
+                [](const glm::vec2& a, float b) { return a + glm::vec2(b); },
+                [](float a, const glm::vec2& b) { return glm::vec2(a) + b; }
+			),
+            sol::meta_function::subtraction, sol::overload(
+                [](const glm::vec2& a, const glm::vec2& b) { return a - b; },
+                [](const glm::vec2& a, float b) { return a - glm::vec2(b); },
+				[](float a, const glm::vec2& b) { return glm::vec2(a) - b; }
+            ),
+            sol::meta_function::multiplication, sol::overload(
+                [](const glm::vec2& a, const glm::vec2& b) { return a * b; },
+				[](const glm::vec2& a, float b) { return a * glm::vec2(b); },
+                [](float a, const glm::vec2& b) { return glm::vec2(a) * b; }
+            ),
+            sol::meta_function::division, sol::overload(
+                [](const glm::vec2& a, const glm::vec2& b) { return a / b; },
+                [](const glm::vec2& a, float b) { return a / glm::vec2(b); },
+                [](float a, const glm::vec2& b) { return glm::vec2(a) / b; }
+            ),
+            sol::meta_function::unary_minus, [](const glm::vec2& v) { return -v; },
+            sol::meta_function::equal_to, [](const glm::vec2& a, const glm::vec2& b) { return a == b; },
+            "length", [](const glm::vec2& v) { return glm::length(v); },
+			"normalize", [](const glm::vec2& v) { return glm::normalize(v); }
 		);
 
         // glm::vec4 binding
@@ -288,6 +318,22 @@ void Script::loadCode(std::string path) {
             "z", &glm::vec4::z,
             "w", &glm::vec4::w
         );
+
+		// LuaUserData binding
+        lua_.new_usertype<LuaUserData>("LuaUserData",
+            sol::no_constructor,
+            sol::meta_function::index, [](LuaUserData& luaData, std::string key) {
+                return luaData.get(key);
+			},
+			sol::meta_function::new_index, [](LuaUserData& luaData, std::string key, sol::stack_object value) {
+                luaData.set(key, value);
+			},
+            sol::meta_function::to_string, [](const LuaUserData&) {
+                return "LuaUserData";
+            },
+			sol::meta_function::length, [](const LuaUserData& luaData) { return luaData.size(); },
+			"clear", &LuaUserData::clear
+		);
 
 		lua_["yield"] = lua_["coroutine"]["yield"];
 
@@ -307,6 +353,7 @@ void Script::loadCode(std::string path) {
     if (!lr.valid()) {
         sol::error err = lr;
         spdlog::error("Lua load error in script {}: {}", getName(), err.what());
+        finished_ = true;
         return;
     }
 
@@ -336,6 +383,10 @@ void Script::reloadCode() {
         spdlog::warn("No code path set for script {}, cannot reload", getName());
         return;
     }
+
+    // We should clear all luaDataStores since reloading scripts wipes the backing data
+	Engine::getInstance().clearAllLuaDataStores();
+
     loadCode(codePath_.string());
 }
 
@@ -353,6 +404,7 @@ void Script::update() {
 	if (!result.valid()) {
 		sol::error err = result;
 		spdlog::error("Lua error in script {}: {}", getName(), err.what());
+		finished_ = true;
 		return;
 	}
 

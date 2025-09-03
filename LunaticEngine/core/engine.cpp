@@ -136,12 +136,18 @@ void Engine::run() {
 	}
 }
 
-void Engine::clearAllLuaDataStores() {
+void Engine::clearAllLuaData() {
 	if (rootInstance) {
 		std::function<void(std::shared_ptr<Instance>)> clearLuaData;
 		clearLuaData = [&](std::shared_ptr<Instance> inst) {
 			if (!inst) return;
 			inst->luaUserData.clear();
+
+			// If it's a `PhysicsSprite` clear the callbacks
+			if (auto ps = std::dynamic_pointer_cast<PhysicsSprite>(inst)) {
+				ps->clearLuaCallbacks();
+			}
+
 			for (const auto& child : inst->getChildren()) {
 				clearLuaData(child);
 			}

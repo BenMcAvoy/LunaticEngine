@@ -54,6 +54,10 @@ rttr::variant solToRTTR(sol::object obj) {
         else if (obj.is<glm::vec4>()) {
             return obj.as<glm::vec4>();
         }
+        else if (obj.is<std::shared_ptr<Instance>>()) {
+            auto& sp = obj.as<std::shared_ptr<Instance>>();
+            return sp;
+		}
         else {
             spdlog::warn("Tried to parse an unknown userdata... none");
             return {};
@@ -335,6 +339,98 @@ void Script::loadCode(std::string path) {
 			"clear", &LuaUserData::clear
 		);
 
+        // create an `Instance` table with a `new` method
+        lua_["Instance"]["new"] = [](std::string className, std::string name) -> std::shared_ptr<Instance> {
+            rttr::type t = rttr::type::get_by_name(className);
+            if (!t.is_valid()) {
+                spdlog::error("No class named '{}' found", className);
+                return nullptr;
+            }
+
+			auto method = t.get_method("construct");
+            if (!method.is_valid()) {
+                spdlog::error("Class '{}' has no construct method", className);
+                return nullptr;
+            }
+			std::string_view nameSV = name;
+			rttr::variant nameVar = nameSV;
+            rttr::variant obj = method.invoke({}, nameVar);
+            if (!obj.is_valid()) {
+                spdlog::error("Failed to construct instance of class '{}'", className);
+                return nullptr;
+            }
+            auto& inst = obj.get_value<std::shared_ptr<Instance>>();
+            if (!inst) {
+                spdlog::error("Construct method of class '{}' did not return an Instance", className);
+                return nullptr;
+			}
+
+            return inst;
+			};
+
+        // For keys a-Z, generate constants for their IDs in the keys table
+		lua_["keys"] = lua_.create_table_with(
+            "unknown", -1,
+            "space", 32,
+            "apostrophe", 39,
+            "comma", 44,
+            "minus", 45,
+            "period", 46,
+            "slash", 47,
+            "0", 48,
+            "1", 49,
+            "2", 50,
+            "3", 51,
+            "4", 52,
+            "5", 53,
+            "6", 54,
+            "7", 55,
+            "8", 56,
+            "9", 57,
+            "semicolon", 59,
+            "equal", 61,
+            "a", 65,
+            "b", 66,
+            "c", 67,
+            "d", 68,
+            "e", 69,
+            "f", 70,
+            "g", 71,
+            "h", 72,
+            "i", 73,
+            "j", 74,
+            "k", 75,
+            "l", 76,
+            "m", 77,
+            "n", 78,
+            "o", 79,
+            "p", 80,
+            "q", 81,
+            "r", 82,
+            "s", 83,
+            "t", 84,
+            "u", 85,
+            "v", 86,
+            "w", 87,
+            "x", 88,
+            "y", 89,
+            "z", 90,
+            "left_bracket", 91,
+            "backslash", 92,
+            "right_bracket", 93,
+            "grave_accent", 96,
+            "escape", 256,
+            "enter", 257,
+            "tab", 258,
+            "backspace", 259,
+            "insert", 260,
+            "del", 261,
+            "right", 262,
+            "left", 263,
+            "down", 264,
+            "up", 265
+        );
+
 		lua_["yield"] = lua_["coroutine"]["yield"];
 
         luaInit_ = true;
@@ -385,7 +481,7 @@ void Script::reloadCode() {
     }
 
     // We should clear all luaDataStores since reloading scripts wipes the backing data
-	Engine::getInstance().clearAllLuaDataStores();
+	Engine::getInstance().clearAllLuaData();
 
     loadCode(codePath_.string());
 }

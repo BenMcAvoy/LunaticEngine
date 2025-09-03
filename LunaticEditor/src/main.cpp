@@ -112,17 +112,9 @@ int main(int argc, char** argv) {
                         outFile << json.dump(4);
                     }
                     else {
-                        engine.clearAllLuaDataStores();
-
-                        // ensure no stale pointers remain in engine registries
-                        auto& upd = engine.getUpdateables();
-                        auto& rnd = engine.getRenderables();
-                        upd.clear();
-                        rnd.clear();
-						// clear the current scene
-						engine.rootInstance->clearChildren();
-
-                        // load the scene from tempScene.json
+                        engine.clearAllLuaData();
+                        engine.rootInstance->clearChildren();
+                        Lunatic::PhysicsSprite::resetWorld();
                         std::ifstream inFile("tempScene.json");
                         nlohmann::json sceneJson;
                         inFile >> sceneJson;
@@ -275,6 +267,12 @@ int main(int argc, char** argv) {
 
 		// If we are in play mode, update the engine
         if (eD.isPlaying) {
+            static bool reallocated = false;
+            if (!reallocated) {
+                engine.getUpdateables().reserve(100'000);
+                reallocated = true;
+			}
+
             for (auto& updateable : engine.getUpdateables()) {
                 updateable->update();
             }
@@ -482,6 +480,11 @@ int main(int argc, char** argv) {
                     }
                     ImGui::PopID();
                 }
+            
+                if (ImGui::Button("Delete Instance", ImVec2(-1, 0))) {
+					eD.selectedInstance.lock()->destroy();
+                    eD.selectedInstance.reset();
+				}
             }
             else {
                 ImGui::Text("Select an instance to see properties.");

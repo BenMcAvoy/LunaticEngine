@@ -15,14 +15,17 @@ namespace Lunatic {
 		static inline b2BodyId lastBodyId_ = { 0, 0 };
 
 		static void stepAll(float timeStep, int subStepCount = 6);
+		static void resetWorld();
 
 		// Overrides so we can inform box2d of changes (getters are fine as-is)
 		void setPosition(const glm::vec2& pos) override;
 		void setScale(const glm::vec2& scl) override;
 		void setRotation(float rot) override;
 
-		void setBodyType(std::string type);
-		std::string getBodyType() const { return bodyType_; }
+		void setBodyType(std::string_view type);
+		std::string_view getBodyType() const { return bodyType_; }
+
+		void clearLuaCallbacks();
 
 		// Immediate actions (still available as functions)
 		void applyForce(const glm::vec2& force, const glm::vec2& point, bool wake = true) const;
@@ -74,6 +77,17 @@ namespace Lunatic {
 		static inline b2WorldId worldId_;
 
 		void update() override;
+
+		// Ensures this sprite has a valid Box2D body in the current world.
+		// If the body is missing (e.g., after a world reset), it will be recreated
+		// using the current render state (position/rotation/scale) and cached settings.
+		bool ensureBody_() const;
+		// Helper to rebuild collider/shape to match current scale, and set user data
+		void rebuildShape_() const;
+		// Parse bodyType_ to Box2D enum
+		b2BodyType parseBodyType_() const;
+		// Avoid log spam when the body is invalid; reset when ensureBody_ succeeds
+		mutable bool invalidReported_ = false;
 
 		b2BodyId bodyId_ = { 0, 0 };
 		b2ShapeId shapeId_ = { 0, 0 };

@@ -219,25 +219,12 @@
                     "className": "Script",
                     "codePath": "res/scripts/game.lua",
                     "name": "GameLogic"
-                },
-                {
-                    "className": "SoundEmitter",
-                    "looping": false,
-                    "name": "SoundEmitter",
-                    "soundPath": "res/sounds/click.wav"
                 }
             ],
             "className": "Instance",
             "name": "Board"
         },
         {
-            "children": [
-                {
-                    "className": "Script",
-                    "codePath": "res/scripts/cursor.lua",
-                    "name": "CursorScript"
-                }
-            ],
             "className": "Sprite",
             "color": [
                 1.0,
@@ -255,11 +242,23 @@
                 0.4000000059604645,
                 0.4000000059604645
             ],
-            "texturePath": "res/textures/cursors/cursor1.png"
+            "texturePath": "res/textures/x1.png"
         },
         {
             "className": "Instance",
             "name": "Reloader"
+        },
+        {
+            "className": "SoundEmitter",
+            "looping": false,
+            "name": "ClickSound",
+            "soundPath": "res/sounds/click.wav"
+        },
+        {
+            "className": "SoundEmitter",
+            "looping": false,
+            "name": "AIClickSound",
+            "soundPath": "res/sounds/clickback.wav"
         }
     ],
     "className": "Instance",

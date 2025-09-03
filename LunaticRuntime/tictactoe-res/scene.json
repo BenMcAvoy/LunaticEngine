@@ -1,0 +1,266 @@
+{
+    "children": [
+        {
+            "className": "Camera",
+            "color": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+            ],
+            "farPlane": 1.0,
+            "name": "MainCamera",
+            "nearPlane": -1.0,
+            "position": [
+                0.0,
+                0.0
+            ],
+            "rotation": 0.0,
+            "scale": [
+                1.0,
+                1.0
+            ],
+            "zoom": 1.0
+        },
+        {
+            "className": "Sprite",
+            "color": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+            ],
+            "name": "Background",
+            "position": [
+                0.0,
+                0.0
+            ],
+            "rotation": 0.0,
+            "scale": [
+                4.0,
+                4.0
+            ],
+            "texturePath": "res/textures/paper.png"
+        },
+        {
+            "children": [
+                {
+                    "className": "Sprite",
+                    "color": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        0.07999999821186066
+                    ],
+                    "name": "Cell_1_1",
+                    "position": [
+                        -0.6000000238418579,
+                        -0.6000000238418579
+                    ],
+                    "rotation": 0.0,
+                    "scale": [
+                        0.5,
+                        0.5
+                    ]
+                },
+                {
+                    "className": "Sprite",
+                    "color": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        0.07999999821186066
+                    ],
+                    "name": "Cell_1_2",
+                    "position": [
+                        -0.6000000238418579,
+                        0.0
+                    ],
+                    "rotation": 0.0,
+                    "scale": [
+                        0.5,
+                        0.5
+                    ]
+                },
+                {
+                    "className": "Sprite",
+                    "color": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        0.07999999821186066
+                    ],
+                    "name": "Cell_1_3",
+                    "position": [
+                        -0.6000000238418579,
+                        0.6000000238418579
+                    ],
+                    "rotation": 0.0,
+                    "scale": [
+                        0.5,
+                        0.5
+                    ]
+                },
+                {
+                    "className": "Sprite",
+                    "color": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        0.07999999821186066
+                    ],
+                    "name": "Cell_2_1",
+                    "position": [
+                        0.0,
+                        -0.6000000238418579
+                    ],
+                    "rotation": 0.0,
+                    "scale": [
+                        0.5,
+                        0.5
+                    ]
+                },
+                {
+                    "className": "Sprite",
+                    "color": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        0.07999999821186066
+                    ],
+                    "name": "Cell_2_2",
+                    "position": [
+                        0.0,
+                        0.0
+                    ],
+                    "rotation": 0.0,
+                    "scale": [
+                        0.5,
+                        0.5
+                    ]
+                },
+                {
+                    "className": "Sprite",
+                    "color": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        0.07999999821186066
+                    ],
+                    "name": "Cell_2_3",
+                    "position": [
+                        0.0,
+                        0.6000000238418579
+                    ],
+                    "rotation": 0.0,
+                    "scale": [
+                        0.5,
+                        0.5
+                    ]
+                },
+                {
+                    "className": "Sprite",
+                    "color": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        0.07999999821186066
+                    ],
+                    "name": "Cell_3_1",
+                    "position": [
+                        0.6000000238418579,
+                        -0.6000000238418579
+                    ],
+                    "rotation": 0.0,
+                    "scale": [
+                        0.5,
+                        0.5
+                    ]
+                },
+                {
+                    "className": "Sprite",
+                    "color": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        0.07999999821186066
+                    ],
+                    "name": "Cell_3_2",
+                    "position": [
+                        0.6000000238418579,
+                        0.0
+                    ],
+                    "rotation": 0.0,
+                    "scale": [
+                        0.5,
+                        0.5
+                    ]
+                },
+                {
+                    "className": "Sprite",
+                    "color": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        0.07999999821186066
+                    ],
+                    "name": "Cell_3_3",
+                    "position": [
+                        0.6000000238418579,
+                        0.6000000238418579
+                    ],
+                    "rotation": 0.0,
+                    "scale": [
+                        0.5,
+                        0.5
+                    ]
+                },
+                {
+                    "className": "Script",
+                    "codePath": "res/scripts/game.lua",
+                    "name": "GameLogic"
+                }
+            ],
+            "className": "Instance",
+            "name": "Board"
+        },
+        {
+            "className": "Sprite",
+            "color": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+            ],
+            "name": "Cursor",
+            "position": [
+                1.1666667461395264,
+                1.0
+            ],
+            "rotation": 0.0,
+            "scale": [
+                0.4000000059604645,
+                0.4000000059604645
+            ],
+            "texturePath": "res/textures/x1.png"
+        },
+        {
+            "className": "Instance",
+            "name": "Reloader"
+        },
+        {
+            "className": "SoundEmitter",
+            "looping": false,
+            "name": "ClickSound",
+            "soundPath": "res/sounds/click.wav"
+        },
+        {
+            "className": "SoundEmitter",
+            "looping": false,
+            "name": "AIClickSound",
+            "soundPath": "res/sounds/clickback.wav"
+        }
+    ],
+    "className": "Instance",
+    "name": "Root"
+}

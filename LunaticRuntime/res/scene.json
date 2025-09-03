@@ -20,245 +20,325 @@
                 1.0,
                 1.0
             ],
-            "zoom": 1.0
-        },
-        {
-            "className": "Sprite",
-            "color": [
-                1.0,
-                1.0,
-                1.0,
-                1.0
-            ],
-            "name": "Background",
-            "position": [
-                0.0,
-                0.0
-            ],
-            "rotation": 0.0,
-            "scale": [
-                4.0,
-                4.0
-            ],
-            "texturePath": "res/textures/paper.png"
+            "zoom": 0.550000011920929
         },
         {
             "children": [
                 {
                     "className": "Sprite",
                     "color": [
-                        0.0,
-                        0.0,
-                        0.0,
-                        0.07999999821186066
+                        1.0,
+                        1.0,
+                        1.0,
+                        1.0
                     ],
-                    "name": "Cell_1_1",
-                    "position": [
-                        -0.6000000238418579,
-                        -0.6000000238418579
-                    ],
-                    "rotation": 0.0,
-                    "scale": [
-                        0.5,
-                        0.5
-                    ]
-                },
-                {
-                    "className": "Sprite",
-                    "color": [
-                        0.0,
-                        0.0,
-                        0.0,
-                        0.07999999821186066
-                    ],
-                    "name": "Cell_1_2",
-                    "position": [
-                        -0.6000000238418579,
-                        0.0
-                    ],
-                    "rotation": 0.0,
-                    "scale": [
-                        0.5,
-                        0.5
-                    ]
-                },
-                {
-                    "className": "Sprite",
-                    "color": [
-                        0.0,
-                        0.0,
-                        0.0,
-                        0.07999999821186066
-                    ],
-                    "name": "Cell_1_3",
-                    "position": [
-                        -0.6000000238418579,
-                        0.6000000238418579
-                    ],
-                    "rotation": 0.0,
-                    "scale": [
-                        0.5,
-                        0.5
-                    ]
-                },
-                {
-                    "className": "Sprite",
-                    "color": [
-                        0.0,
-                        0.0,
-                        0.0,
-                        0.07999999821186066
-                    ],
-                    "name": "Cell_2_1",
-                    "position": [
-                        0.0,
-                        -0.6000000238418579
-                    ],
-                    "rotation": 0.0,
-                    "scale": [
-                        0.5,
-                        0.5
-                    ]
-                },
-                {
-                    "className": "Sprite",
-                    "color": [
-                        0.0,
-                        0.0,
-                        0.0,
-                        0.07999999821186066
-                    ],
-                    "name": "Cell_2_2",
+                    "name": "Sky1",
                     "position": [
                         0.0,
                         0.0
                     ],
                     "rotation": 0.0,
                     "scale": [
-                        0.5,
-                        0.5
-                    ]
+                        10.0,
+                        4.0
+                    ],
+                    "texturePath": "res/textures/sky.png"
                 },
                 {
                     "className": "Sprite",
                     "color": [
-                        0.0,
-                        0.0,
-                        0.0,
-                        0.07999999821186066
+                        1.0,
+                        1.0,
+                        1.0,
+                        1.0
                     ],
-                    "name": "Cell_2_3",
+                    "name": "Sky2",
                     "position": [
-                        0.0,
-                        0.6000000238418579
-                    ],
-                    "rotation": 0.0,
-                    "scale": [
-                        0.5,
-                        0.5
-                    ]
-                },
-                {
-                    "className": "Sprite",
-                    "color": [
-                        0.0,
-                        0.0,
-                        0.0,
-                        0.07999999821186066
-                    ],
-                    "name": "Cell_3_1",
-                    "position": [
-                        0.6000000238418579,
-                        -0.6000000238418579
-                    ],
-                    "rotation": 0.0,
-                    "scale": [
-                        0.5,
-                        0.5
-                    ]
-                },
-                {
-                    "className": "Sprite",
-                    "color": [
-                        0.0,
-                        0.0,
-                        0.0,
-                        0.07999999821186066
-                    ],
-                    "name": "Cell_3_2",
-                    "position": [
-                        0.6000000238418579,
+                        -10.0,
                         0.0
                     ],
                     "rotation": 0.0,
                     "scale": [
-                        0.5,
-                        0.5
-                    ]
+                        10.0,
+                        4.0
+                    ],
+                    "texturePath": "res/textures/sky.png"
                 },
                 {
                     "className": "Sprite",
                     "color": [
-                        0.0,
-                        0.0,
-                        0.0,
-                        0.07999999821186066
+                        1.0,
+                        1.0,
+                        1.0,
+                        1.0
                     ],
-                    "name": "Cell_3_3",
+                    "name": "Sky3",
                     "position": [
-                        0.6000000238418579,
-                        0.6000000238418579
+                        10.0,
+                        0.0
                     ],
                     "rotation": 0.0,
                     "scale": [
-                        0.5,
-                        0.5
-                    ]
+                        10.0,
+                        4.0
+                    ],
+                    "texturePath": "res/textures/sky.png"
+                },
+                {
+                    "angularVelocity": 0.0,
+                    "bodyType": "static",
+                    "bullet": false,
+                    "className": "PhysicsSprite",
+                    "color": [
+                        1.0,
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "fixedRotation": false,
+                    "force": [
+                        0.0,
+                        0.0
+                    ],
+                    "forcePoint": [
+                        0.0,
+                        0.0
+                    ],
+                    "forceToCenter": [
+                        0.0,
+                        0.0
+                    ],
+                    "impulsePoint": [
+                        0.0,
+                        0.0
+                    ],
+                    "linearImpulse": [
+                        0.0,
+                        0.0
+                    ],
+                    "linearImpulseToCenter": [
+                        0.0,
+                        0.0
+                    ],
+                    "linearVelocity": [
+                        0.0,
+                        0.0
+                    ],
+                    "name": "Land1",
+                    "position": [
+                        -4.0,
+                        -2.0
+                    ],
+                    "rotation": 0.0,
+                    "scale": [
+                        4.0,
+                        1.3329999446868896
+                    ],
+                    "texturePath": "res/textures/land.png",
+                    "torque": 0.0
+                },
+                {
+                    "angularVelocity": 0.0,
+                    "bodyType": "static",
+                    "bullet": false,
+                    "className": "PhysicsSprite",
+                    "color": [
+                        1.0,
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "fixedRotation": false,
+                    "force": [
+                        0.0,
+                        0.0
+                    ],
+                    "forcePoint": [
+                        0.0,
+                        0.0
+                    ],
+                    "forceToCenter": [
+                        0.0,
+                        0.0
+                    ],
+                    "impulsePoint": [
+                        0.0,
+                        0.0
+                    ],
+                    "linearImpulse": [
+                        0.0,
+                        0.0
+                    ],
+                    "linearImpulseToCenter": [
+                        0.0,
+                        0.0
+                    ],
+                    "linearVelocity": [
+                        0.0,
+                        0.0
+                    ],
+                    "name": "Land2",
+                    "position": [
+                        0.0,
+                        -2.0
+                    ],
+                    "rotation": 0.0,
+                    "scale": [
+                        4.0,
+                        1.3329999446868896
+                    ],
+                    "texturePath": "res/textures/land.png",
+                    "torque": 0.0
+                },
+                {
+                    "angularVelocity": 0.0,
+                    "bodyType": "static",
+                    "bullet": false,
+                    "className": "PhysicsSprite",
+                    "color": [
+                        1.0,
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "fixedRotation": false,
+                    "force": [
+                        0.0,
+                        0.0
+                    ],
+                    "forcePoint": [
+                        0.0,
+                        0.0
+                    ],
+                    "forceToCenter": [
+                        0.0,
+                        0.0
+                    ],
+                    "impulsePoint": [
+                        0.0,
+                        0.0
+                    ],
+                    "linearImpulse": [
+                        0.0,
+                        0.0
+                    ],
+                    "linearImpulseToCenter": [
+                        0.0,
+                        0.0
+                    ],
+                    "linearVelocity": [
+                        0.0,
+                        0.0
+                    ],
+                    "name": "Land3",
+                    "position": [
+                        4.0,
+                        -2.0
+                    ],
+                    "rotation": 0.0,
+                    "scale": [
+                        4.0,
+                        1.3329999446868896
+                    ],
+                    "texturePath": "res/textures/land.png",
+                    "torque": 0.0
                 },
                 {
                     "className": "Script",
-                    "codePath": "res/scripts/game.lua",
-                    "name": "GameLogic"
+                    "codePath": "res/scripts/landscrollerscript.lua",
+                    "name": "LandScrollerScript"
                 }
             ],
             "className": "Instance",
-            "name": "Board"
+            "name": "Decorations"
         },
         {
-            "className": "Sprite",
+            "children": [
+                {
+                    "className": "Script",
+                    "codePath": "res/scripts/pipescript.lua",
+                    "name": "PipeScript"
+                }
+            ],
+            "className": "Instance",
+            "name": "Pipes"
+        },
+        {
+            "className": "Script",
+            "codePath": "res/scripts/scorerscript.lua",
+            "name": "ScorerScript"
+        },
+        {
+            "angularVelocity": 0.0,
+            "bodyType": "dynamic",
+            "bullet": false,
+            "children": [
+                {
+                    "className": "Script",
+                    "codePath": "res/scripts/birdscript.lua",
+                    "name": "BirdScript"
+                },
+                {
+                    "className": "SoundEmitter",
+                    "looping": false,
+                    "name": "HitSFX",
+                    "soundPath": "res/sounds/sfx_hit.wav"
+                },
+                {
+                    "className": "SoundEmitter",
+                    "looping": false,
+                    "name": "WingSFX",
+                    "soundPath": "res/sounds/sfx_wing.wav"
+                }
+            ],
+            "className": "PhysicsSprite",
             "color": [
                 1.0,
                 1.0,
                 1.0,
                 1.0
             ],
-            "name": "Cursor",
+            "fixedRotation": false,
+            "force": [
+                0.0,
+                0.0
+            ],
+            "forcePoint": [
+                0.0,
+                0.0
+            ],
+            "forceToCenter": [
+                0.0,
+                0.0
+            ],
+            "impulsePoint": [
+                0.0,
+                0.0
+            ],
+            "linearImpulse": [
+                0.0,
+                0.0
+            ],
+            "linearImpulseToCenter": [
+                0.0,
+                0.0
+            ],
+            "linearVelocity": [
+                0.0,
+                0.0
+            ],
+            "name": "Bird",
             "position": [
-                1.1666667461395264,
-                1.0
+                0.0,
+                0.0
             ],
             "rotation": 0.0,
             "scale": [
-                0.4000000059604645,
-                0.4000000059604645
+                0.35499998927116394,
+                0.25
             ],
-            "texturePath": "res/textures/x1.png"
-        },
-        {
-            "className": "Instance",
-            "name": "Reloader"
-        },
-        {
-            "className": "SoundEmitter",
-            "looping": false,
-            "name": "ClickSound",
-            "soundPath": "res/sounds/click.wav"
-        },
-        {
-            "className": "SoundEmitter",
-            "looping": false,
-            "name": "AIClickSound",
-            "soundPath": "res/sounds/clickback.wav"
+            "texturePath": "res/textures/bird.png",
+            "torque": 0.0
         }
     ],
     "className": "Instance",

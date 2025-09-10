@@ -8,6 +8,9 @@
 
 using namespace Lunatic;
 
+extern int forceLinkAnchor();
+static inline int forceLinkAnchorRes = forceLinkAnchor();
+
 Engine& Engine::getInstance() {
 	static Engine instance;
 	return instance;
@@ -82,7 +85,6 @@ void Engine::init(GLFWwindow* externalWindow, bool initLibs) {
 
 		if (std::filesystem::exists("C:\\Windows\\Fonts\\Arial.ttf")) {
 			io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\Arial.ttf", 16.0f);
-			io.Fonts->Build();
 		}
 		else {
 			spdlog::warn("Arial font not found, using default font");

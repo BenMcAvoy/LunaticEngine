@@ -29,12 +29,18 @@ struct EditorData {
     std::weak_ptr<Lunatic::Instance> selectedInstance;
 };
 
+#if defined(_MSC_VER)
+#define lunStrcpy(dest, src) strcpy_s(dest, sizeof(dest), src)
+#else
+#define lunStrcpy(dest, src) strcpy(dest, src)
+#endif
+
 int main(int argc, char** argv) {
     GLFWwindow* window = createWindow(1280, 720, "Lunatic Editor");
 
 	// Change CWD to ../LunaticRuntime if it exists
-    if (std::filesystem::exists("../LunaticRuntime")) {
-        std::filesystem::current_path("../LunaticRuntime");
+    if (std::filesystem::exists("../../../../LunaticRuntime")) {
+        std::filesystem::current_path("../../../../LunaticRuntime");
     }
 
 	Lunatic::Engine& engine = Lunatic::Engine::getInstance();
@@ -221,7 +227,7 @@ int main(int argc, char** argv) {
 
 				// We are done :tada:
                 // clear the name buffer for next time
-                strcpy_s(nameBuf, "New Instance");
+				lunStrcpy(nameBuf, "New Instance");
                 ImGui::CloseCurrentPopup();
 			}
 
@@ -389,7 +395,7 @@ int main(int argc, char** argv) {
                                     tb.lastPropValue = std::string(value.get_value<std::string_view>());
                                 }
                                 memset(tb.buf.data(), 0, tb.buf.size());
-                                strncpy_s(tb.buf.data(), tb.buf.size(), tb.lastPropValue.c_str(), _TRUNCATE);
+								lunStrcpy(tb.buf.data(), tb.lastPropValue.c_str());
                                 tb.initialized = true;
                             }
 

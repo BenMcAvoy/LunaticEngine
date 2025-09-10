@@ -77,7 +77,6 @@ GLFWwindow* createWindow(int width, int height, const char* title) {
 	// If the arial font exists, use it
 	if (std::filesystem::exists("C:\\Windows\\Fonts\\Arial.ttf")) {
 		io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\Arial.ttf", 16.0f);
-		io.Fonts->Build();
 	}
 	else {
 		spdlog::warn("Arial font not found, using default font");

@@ -7,7 +7,7 @@
 #include "primitives/sound.h"
 #include "primitives/physicssprite.h"
 
-extern "C" void _force_link_anchor() {}
+int forceLinkAnchor () { return 0; } // HACK: called during engine init to force this compilation unit to be included
 
 #define CONSTRUCT_IMPL(ClassName) \
 .method("construct", [](const std::string_view name) { \

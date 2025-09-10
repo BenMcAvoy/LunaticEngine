@@ -258,7 +258,7 @@
             "className": "SoundEmitter",
             "looping": false,
             "name": "AIClickSound",
-            "soundPath": "res/sounds/clickback.wav"
+            "soundPath": "res/sounds/clickBack.wav"
         }
     ],
     "className": "Instance",

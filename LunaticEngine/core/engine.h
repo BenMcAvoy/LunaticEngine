@@ -81,6 +81,9 @@ namespace Lunatic {
 		std::vector<Renderable*>& getRenderables() { return renderables_; }
 		std::vector<Updateable*>& getUpdateables() { return updateables_; }
 
+		int getWindowWidth() const { return windowWidth_; }
+		int getWindowHeight() const { return windowHeight_; }
+
 	private:
 		std::vector<Renderable*> renderables_;
 		std::vector<Updateable*> updateables_;
@@ -143,5 +146,43 @@ namespace Lunatic {
 		static void winScrollCallback(GLFWwindow* window, double xoffset, double yoffset);
 		static void winJoystickCallback(int jid, int event);
 		static void winDropCallback(GLFWwindow* window, int path_count, const char* paths[]);
+	};
+
+	// Wrapper for Lua userdata representing an Instance
+	struct LuaEngine {
+		Engine* engine;
+
+		explicit LuaEngine(Engine* eng) : engine(eng) {}
+		~LuaEngine() = default;
+
+		static LuaEngine& fromLua(lua_State* L) {
+			LuaEngine* ud = static_cast<LuaEngine*>(lua_touserdata(L, 1));
+			assert(ud != nullptr && "Expected LuaEngine userdata");
+			return *ud;
+		}
+		static void pushToLua(Engine* eng, lua_State* L);
+
+		static void createInLua(Engine* eng, lua_State* L) {
+			LuaEngine* ud = static_cast<LuaEngine*>(lua_newuserdata(L, sizeof(LuaEngine)));
+			new (ud) LuaEngine {eng};
+
+			// Ensure metatable exists and is assigned to the userdata
+			if (luaL_newmetatable(L, "LuaEngineMeta")) {
+				lua_pushcfunction(L, indexFN);
+				lua_setfield(L, -2, "__index");
+				lua_pushcfunction(L, newIndexFN);
+				lua_setfield(L, -2, "__newindex");
+				lua_pushcfunction(L, [](lua_State* L) -> int {
+					LuaEngine* ud = static_cast<LuaEngine*>(lua_touserdata(L, 1));
+					ud->~LuaEngine();
+					return 0;
+				});
+				lua_setfield(L, -2, "__gc");
+			}
+			lua_setmetatable(L, -2);
+		}
+
+		static int indexFN(lua_State* L);
+		static int newIndexFN(lua_State* L);
 	};
 }

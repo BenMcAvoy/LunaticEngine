@@ -542,3 +542,200 @@ void Engine::unregisterUpdateable(Updateable* updateable) {
 void Engine::registerMainCamera(Camera* camera) {
 	renderer_.registerMainCamera(camera);
 }
+
+static int LuaEngine_HideCursor(lua_State* L) {
+	LuaEngine& luaEngine = LuaEngine::fromLua(L);
+	luaEngine.engine->hideCursor();
+	return 0;
+}
+
+static int LuaEngine_ShowCursor(lua_State* L) {
+	LuaEngine& luaEngine = LuaEngine::fromLua(L);
+	luaEngine.engine->showCursor();
+	return 0;
+}
+
+static bool Lua_ReadVec2(lua_State* L, int idx, float& x, float& y) {
+	if (!lua_istable(L, idx)) return false;
+	bool has = false;
+	lua_getfield(L, idx, "x"); if (lua_isnumber(L, -1)) { x = static_cast<float>(lua_tonumber(L, -1)); has = true; } lua_pop(L, 1);
+	lua_getfield(L, idx, "y"); if (lua_isnumber(L, -1)) { y = static_cast<float>(lua_tonumber(L, -1)); has = true; } lua_pop(L, 1);
+	if (!has) {
+		lua_rawgeti(L, idx, 1); if (lua_isnumber(L, -1)) { x = static_cast<float>(lua_tonumber(L, -1)); has = true; } lua_pop(L, 1);
+		lua_rawgeti(L, idx, 2); if (lua_isnumber(L, -1)) { y = static_cast<float>(lua_tonumber(L, -1)); has = true; } lua_pop(L, 1);
+	}
+	return has;
+}
+
+static bool Lua_ReadVec4(lua_State* L, int idx, float& r, float& g, float& b, float& a) {
+	if (!lua_istable(L, idx)) return false;
+	bool has = false;
+	lua_getfield(L, idx, "r"); if (lua_isnumber(L, -1)) { r = static_cast<float>(lua_tonumber(L, -1)); has = true; } lua_pop(L, 1);
+	lua_getfield(L, idx, "g"); if (lua_isnumber(L, -1)) { g = static_cast<float>(lua_tonumber(L, -1)); has = true; } lua_pop(L, 1);
+	lua_getfield(L, idx, "b"); if (lua_isnumber(L, -1)) { b = static_cast<float>(lua_tonumber(L, -1)); has = true; } lua_pop(L, 1);
+	lua_getfield(L, idx, "a"); if (lua_isnumber(L, -1)) { a = static_cast<float>(lua_tonumber(L, -1)); has = true; } lua_pop(L, 1);
+	if (!has) {
+		lua_rawgeti(L, idx, 1); if (lua_isnumber(L, -1)) { r = static_cast<float>(lua_tonumber(L, -1)); has = true; } lua_pop(L, 1);
+		lua_rawgeti(L, idx, 2); if (lua_isnumber(L, -1)) { g = static_cast<float>(lua_tonumber(L, -1)); has = true; } lua_pop(L, 1);
+		lua_rawgeti(L, idx, 3); if (lua_isnumber(L, -1)) { b = static_cast<float>(lua_tonumber(L, -1)); has = true; } lua_pop(L, 1);
+		lua_rawgeti(L, idx, 4); if (lua_isnumber(L, -1)) { a = static_cast<float>(lua_tonumber(L, -1)); has = true; } lua_pop(L, 1);
+	}
+	return has;
+}
+
+static int LuaEngine_DrawText(lua_State* L) {
+	LuaEngine& luaEngine = LuaEngine::fromLua(L);
+	Engine* engine = luaEngine.engine;
+
+	// Detect colon syntax: engine:drawText(...) pushes self at arg 1
+	int baseIdx = 1;
+	if (lua_isuserdata(L, 1)) {
+		bool isSelf = false;
+		if (lua_getmetatable(L, 1)) {
+			luaL_getmetatable(L, "LuaEngineMeta");
+			isSelf = (lua_rawequal(L, -1, -2) != 0);
+			lua_pop(L, 2);
+		}
+		if (isSelf) baseIdx = 2;
+	}
+
+	float px = 0.f, py = 0.f;
+	int textIdx = 0;
+	if (Lua_ReadVec2(L, baseIdx, px, py)) {
+		textIdx = baseIdx + 1; // color at textIdx+1
+	} else if (lua_isnumber(L, baseIdx) && lua_isnumber(L, baseIdx + 1)) {
+		px = static_cast<float>(lua_tonumber(L, baseIdx));
+		py = static_cast<float>(lua_tonumber(L, baseIdx + 1));
+		textIdx = baseIdx + 2; // color at textIdx+1
+	} else {
+		return luaL_error(L, "Expected vec2-like table or two numbers for position");
+	}
+
+	if (!lua_isstring(L, textIdx)) {
+		return luaL_error(L, "Expected string for text");
+	}
+	const char* text = lua_tostring(L, textIdx);
+
+	float cr = 1.f, cg = 1.f, cb = 1.f, ca = 1.f;
+	int colorIdx = textIdx + 1;
+	if (lua_gettop(L) >= colorIdx) {
+		if (Lua_ReadVec4(L, colorIdx, cr, cg, cb, ca)) {
+			// ok
+		} else if (lua_isnumber(L, colorIdx) && lua_isnumber(L, colorIdx + 1) && lua_isnumber(L, colorIdx + 2)) {
+			cr = static_cast<float>(lua_tonumber(L, colorIdx));
+			cg = static_cast<float>(lua_tonumber(L, colorIdx + 1));
+			cb = static_cast<float>(lua_tonumber(L, colorIdx + 2));
+			if (lua_isnumber(L, colorIdx + 3)) {
+				ca = static_cast<float>(lua_tonumber(L, colorIdx + 3));
+			} else {
+				ca = 1.f;
+			}
+		} else {
+			return luaL_error(L, "Expected vec4-like table or 3-4 numbers for color");
+		}
+	}
+
+	engine->drawText({ px, py }, text ? text : "", { cr, cg, cb, ca });
+	return 0;
+}
+
+static int LuaEngine_GetMouseButtonState(lua_State* L) {
+	LuaEngine& luaEngine = LuaEngine::fromLua(L);
+	Engine* engine = luaEngine.engine;
+	// Support both engine:getMouseButtonState(btn) and engine.getMouseButtonState(btn)
+	int argIdx = 1;
+	if (lua_isuserdata(L, 1)) {
+		bool isSelf = false;
+		if (lua_getmetatable(L, 1)) {
+			luaL_getmetatable(L, "LuaEngineMeta");
+			isSelf = (lua_rawequal(L, -1, -2) != 0);
+			lua_pop(L, 2);
+		}
+		if (isSelf) argIdx = 2;
+	}
+	int button = static_cast<int>(luaL_checkinteger(L, argIdx));
+	MouseButtonAction state = engine->getMouseButtonState(button);
+	switch (state) {
+	case MouseButtonAction::Pressed: lua_pushinteger(L, 1); break;
+	case MouseButtonAction::Held: lua_pushinteger(L, 2); break;
+	case MouseButtonAction::Released: lua_pushinteger(L, 3); break;
+	default: lua_pushinteger(L, 0); break;
+	}
+	return 1;
+}
+
+int LuaEngine::indexFN(lua_State* L) {
+	LuaEngine& luaEngine = LuaEngine::fromLua(L);
+	Engine* engine = luaEngine.engine;
+
+	const char* key = luaL_checkstring(L, 2);
+	if (std::strcmp(key, "rootInstance") == 0) {
+		// Push rootInstance as userdata
+		if (engine->rootInstance) {
+			LuaInstance::createInLua(engine->rootInstance, L);
+		} else {
+			lua_pushnil(L);
+		}
+		return 1;
+	}
+	else if (std::strcmp(key, "renderer") == 0) {
+		lua_pushnil(L);
+		return 1;
+	}
+	else if (std::strcmp(key, "windowWidth") == 0) {
+		lua_pushinteger(L, engine->getWindowWidth());
+		return 1;
+	}
+	else if (std::strcmp(key, "windowHeight") == 0) {
+		lua_pushinteger(L, engine->getWindowHeight());
+		return 1;
+	}
+	else if (std::strcmp(key, "mouseX") == 0) {
+		lua_pushnumber(L, engine->getMouseX());
+		return 1;
+	}
+	else if (std::strcmp(key, "mouseY") == 0) {
+		lua_pushnumber(L, engine->getMouseY());
+		return 1;
+	}
+	else if (std::strcmp(key, "mousePos") == 0) {
+		glm::vec2 pos = engine->getMousePos();
+		lua_newtable(L);
+		lua_pushnumber(L, pos.x); lua_setfield(L, -2, "x");
+		lua_pushnumber(L, pos.y); lua_setfield(L, -2, "y");
+		lua_pushnumber(L, pos.x); lua_rawseti(L, -2, 1);
+		lua_pushnumber(L, pos.y); lua_rawseti(L, -2, 2);
+		luaL_getmetatable(L, "LuaVec2Meta"); lua_setmetatable(L, -2);
+		return 1;
+	}
+	else if (std::strcmp(key, "hideCursor") == 0) {
+		lua_pushcfunction(L, LuaEngine_HideCursor);
+		return 1;
+	}
+	else if (std::strcmp(key, "showCursor") == 0) {
+		lua_pushcfunction(L, LuaEngine_ShowCursor);
+		return 1;
+	}
+	else if (std::strcmp(key, "drawText") == 0) {
+		lua_pushcfunction(L, LuaEngine_DrawText);
+		return 1;
+	}
+	else if (std::strcmp(key, "getMouseButtonState") == 0) {
+		lua_pushcfunction(L, LuaEngine_GetMouseButtonState);
+		return 1;
+	}
+	else {
+		return luaL_error(L, "Attempt to access unknown Engine property '%s'", key);
+	}
+	return 0;
+}
+
+void LuaEngine::pushToLua(Engine* engine, lua_State* co_) {
+	LuaEngine::createInLua(engine, co_);
+	lua_setglobal(co_, "engine"); // _G.engine = userdata (pops userdata)
+}
+
+int LuaEngine::newIndexFN(lua_State* L) {
+	const char* key = luaL_checkstring(L, 2);
+	return luaL_error(L, "Attempt to set read-only Engine property '%s'", key ? key : "<unknown>");
+}

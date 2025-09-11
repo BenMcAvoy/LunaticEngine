@@ -10,13 +10,14 @@ namespace Lunatic {
 		LuaUserData() = default;
 		~LuaUserData() = default;
 
-		void set(std::string key, sol::stack_object value);
-		sol::object get(std::string key);
+		void set(lua_State* L, std::string_view key, int index);
+		void get(lua_State* L, std::string_view key) const;
+
 		int size() const { return static_cast<int>(entries_.size()); }
 		void clear() { entries_.clear(); }
 
 	private:
-		std::unordered_map<std::string, sol::object> entries_;
+		std::unordered_map<std::string, int> entries_; // int = lua reg index
 	};
 
 	class Instance : public std::enable_shared_from_this<Instance> {
@@ -101,5 +102,21 @@ namespace Lunatic {
 
 		RTTR_ENABLE();
 		friend class rttr::registration::class_<Updateable>; 
+	};
+
+	// Lua wrappers, this is used simply for convenience
+	struct LuaInstance {
+		std::shared_ptr<Instance> instance;
+
+		explicit LuaInstance(std::shared_ptr<Instance> inst) : instance(inst) {}
+		~LuaInstance() = default;
+
+		void swap(std::shared_ptr<Instance> inst) { instance = inst; }
+
+		static int indexFN(lua_State* L);
+		static int newIndexFN(lua_State* L);
+
+		static void createInLua(std::shared_ptr<Instance> inst, lua_State* L);
+		static LuaInstance& fromLua(lua_State* L);
 	};
 } // namespace Lunatic

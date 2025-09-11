@@ -2,6 +2,7 @@
 
 #include "physicssprite.h"
 #include "script.h"
+#include "model/base.h"
 
 using namespace Lunatic;
 
@@ -46,27 +47,111 @@ void PhysicsSprite::stepAll(float timeStep, int subStepCount) {
 
 	b2ContactEvents contactEvents = b2World_GetContactEvents(worldId_);
 
-	std::span<b2ContactBeginTouchEvent> beginEvents(contactEvents.beginEvents, contactEvents.beginCount);
-	for (const auto& event : beginEvents) {
-		if (!b2Shape_IsValid(event.shapeIdA) || !b2Shape_IsValid(event.shapeIdB)) continue;
+	// Helper lambdas local to this function
+	auto pushVec2 = [](lua_State* L, float x, float y) {
+		lua_newtable(L);
+		lua_pushnumber(L, x); lua_setfield(L, -2, "x");
+		lua_pushnumber(L, y); lua_setfield(L, -2, "y");
+		lua_pushnumber(L, x); lua_rawseti(L, -2, 1);
+		lua_pushnumber(L, y); lua_rawseti(L, -2, 2);
+	};
 
-		void* userDataA = b2Shape_GetUserData(event.shapeIdA);
-		void* userDataB = b2Shape_GetUserData(event.shapeIdB);
-		PhysicsSprite* spriteA = static_cast<PhysicsSprite*>(userDataA);
-		PhysicsSprite* spriteB = static_cast<PhysicsSprite*>(userDataB);
+	auto invokeCallback2 = [&](PhysicsSprite* self, PhysicsSprite* other, const char* key) {
+		if (!self) return;
+		lua_State* L = Script::getLuaState();
+		if (!L) return;
 
-		static sol::state_view sV = Lunatic::Script::getLuaState();
-		static std::vector<sol::object> args;
-		args.clear();
-		if (spriteA->onCollisionEnterCB_) {
-			args.emplace_back(sol::make_object(sV, spriteA->shared_from_this()));
-			args.emplace_back(sol::make_object(sV, spriteB->shared_from_this()));
-			spriteA->onCollisionEnterCB_(args);
+		// Fetch callback from self's user data
+		self->luaUserData.get(L, key);
+		if (!lua_isfunction(L, -1)) { lua_pop(L, 1); return; }
+
+		// Push self and other as LuaInstance userdatas
+		try {
+			LuaInstance::createInLua(self->shared_from_this(), L);
+		} catch (...) {
+			// If shared_from_this failed (shouldn't in normal usage), clean stack and bail
+			lua_pop(L, 1);
+			return;
 		}
-		if (spriteB->onCollisionEnterCB_) {
-			args.emplace_back(sol::make_object(sV, spriteB->shared_from_this()));
-			args.emplace_back(sol::make_object(sV, spriteA->shared_from_this()));
-			spriteB->onCollisionEnterCB_(args);
+		if (other) {
+			try { LuaInstance::createInLua(other->shared_from_this(), L); }
+			catch (...) { lua_pop(L, 2); return; }
+		} else {
+			lua_pushnil(L);
+		}
+
+		// Call fn(self, other)
+		if (lua_pcall(L, 2, 0, 0) != LUA_OK) {
+			spdlog::error("Lua error in {}: {}", key, lua_tostring(L, -1));
+			lua_pop(L, 1); // pop error
+		}
+	};
+
+	auto invokeCallback4 = [&](PhysicsSprite* self, PhysicsSprite* other, const char* key, const b2Vec2& point, const b2Vec2& normal) {
+		if (!self) return;
+		lua_State* L = Script::getLuaState();
+		if (!L) return;
+
+		self->luaUserData.get(L, key);
+		if (!lua_isfunction(L, -1)) { lua_pop(L, 1); return; }
+
+		// Push self, other, point(vec2), normal(vec2)
+		try {
+			LuaInstance::createInLua(self->shared_from_this(), L);
+		} catch (...) { lua_pop(L, 1); return; }
+		if (other) {
+			try { LuaInstance::createInLua(other->shared_from_this(), L); }
+			catch (...) { lua_pop(L, 2); return; }
+		} else {
+			lua_pushnil(L);
+		}
+		pushVec2(L, point.x, point.y);
+		pushVec2(L, normal.x, normal.y);
+
+		if (lua_pcall(L, 4, 0, 0) != LUA_OK) {
+			spdlog::error("Lua error in {}: {}", key, lua_tostring(L, -1));
+			lua_pop(L, 1);
+		}
+	};
+
+	// Begin touch events -> onCollisionEnter(self, other)
+	{
+		std::span<b2ContactBeginTouchEvent> beginEvents(contactEvents.beginEvents, contactEvents.beginCount);
+		for (const auto& ev : beginEvents) {
+			if (!b2Shape_IsValid(ev.shapeIdA) || !b2Shape_IsValid(ev.shapeIdB)) continue;
+			auto spriteA = static_cast<PhysicsSprite*>(b2Shape_GetUserData(ev.shapeIdA));
+			auto spriteB = static_cast<PhysicsSprite*>(b2Shape_GetUserData(ev.shapeIdB));
+			if (spriteA) invokeCallback2(spriteA, spriteB, "onCollisionEnter");
+			if (spriteB) invokeCallback2(spriteB, spriteA, "onCollisionEnter");
+		}
+	}
+
+	// End touch events -> onCollisionExit(self, other)
+	{
+		std::span<b2ContactEndTouchEvent> endEvents(contactEvents.endEvents, contactEvents.endCount);
+		for (const auto& ev : endEvents) {
+			if (!b2Shape_IsValid(ev.shapeIdA) || !b2Shape_IsValid(ev.shapeIdB)) continue;
+			auto spriteA = static_cast<PhysicsSprite*>(b2Shape_GetUserData(ev.shapeIdA));
+			auto spriteB = static_cast<PhysicsSprite*>(b2Shape_GetUserData(ev.shapeIdB));
+			if (spriteA) invokeCallback2(spriteA, spriteB, "onCollisionExit");
+			if (spriteB) invokeCallback2(spriteB, spriteA, "onCollisionExit");
+		}
+	}
+
+	// Hit events -> onCollisionHit(self, other, point, normal)
+	{
+		std::span<b2ContactHitEvent> hitEvents(contactEvents.hitEvents, contactEvents.hitCount);
+		for (const auto& ev : hitEvents) {
+			if (!b2Shape_IsValid(ev.shapeIdA) || !b2Shape_IsValid(ev.shapeIdB)) continue;
+			auto spriteA = static_cast<PhysicsSprite*>(b2Shape_GetUserData(ev.shapeIdA));
+			auto spriteB = static_cast<PhysicsSprite*>(b2Shape_GetUserData(ev.shapeIdB));
+			// Note: Box2D provides normal pointing from A to B.
+			if (spriteA) invokeCallback4(spriteA, spriteB, "onCollisionHit", ev.point, ev.normal);
+			if (spriteB) {
+				// For B, flip the normal to be from B to A
+				b2Vec2 flipped = { -ev.normal.x, -ev.normal.y };
+				invokeCallback4(spriteB, spriteA, "onCollisionHit", ev.point, flipped);
+			}
 		}
 	}
 }
@@ -171,7 +256,7 @@ void PhysicsSprite::setBodyType(std::string_view type) {
 }
 
 void PhysicsSprite::clearLuaCallbacks() {
-	onCollisionEnterCB_ = nullptr;
+	//onCollisionEnterCB_ = nullptr; HACK: not implemented yet
 }
 
 void PhysicsSprite::update() {

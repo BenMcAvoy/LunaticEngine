@@ -77,6 +77,6 @@ CONSTRUCT_IMPL(PhysicsSprite)
 .property("torque", &Lunatic::PhysicsSprite::getTorque, &Lunatic::PhysicsSprite::setTorque)
 .property("linearVelocity", &Lunatic::PhysicsSprite::getLinearVelocity, &Lunatic::PhysicsSprite::setLinearVelocity)
 .property("angularVelocity", &Lunatic::PhysicsSprite::getAngularVelocity, &Lunatic::PhysicsSprite::setAngularVelocity)
-.property("fixedRotation", &Lunatic::PhysicsSprite::getFixedRotation, &Lunatic::PhysicsSprite::setFixedRotation)
-.method("setOnCollisionEnter", &Lunatic::PhysicsSprite::setOnCollisionEnter);
+.property("fixedRotation", &Lunatic::PhysicsSprite::getFixedRotation, &Lunatic::PhysicsSprite::setFixedRotation);
+//.method("setOnCollisionEnter", &Lunatic::PhysicsSprite::setOnCollisionEnter);
 }

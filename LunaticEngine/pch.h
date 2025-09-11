@@ -4,8 +4,6 @@
 
 #define IMGUI_DEFINE_MATH_OPERATORS
 
-#define SOL_ALL_SAFETIES_ON 1
-
 #include <GLFW/glfw3.h>
 #include <glad/glad.h>
 
@@ -32,8 +30,6 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include <lua.hpp>
-
-#include <sol/sol.hpp>
 
 #include <rttr/registration>
 #include <rttr/registration_friend>

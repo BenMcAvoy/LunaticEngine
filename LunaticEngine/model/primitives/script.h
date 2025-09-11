@@ -14,31 +14,29 @@ namespace Lunatic {
 			return "Script";
 		}
 
-		void loadCode(std::string path);
-		std::string getCodePath() const {
-			return codePath_.string();
+		void loadCode(std::string_view path);
+		std::string_view getCodePath() const {
+			return codePath_;
 		}
 
 		void reloadCode();
 
 		virtual void update() override;
 
-		static sol::state_view getLuaState() {
-			return lua_;
+		static lua_State* getLuaState() {
+			return L_;
 		}
 
 		RTTR_ENABLE(Instance, Updateable);
 		RTTR_REGISTRATION_FRIEND;
 	private:
-		static inline sol::state lua_;
+		static inline lua_State* L_ = nullptr;
 		static inline bool luaInit_ = false;
 
 		bool finished_ = false;
 
-		std::filesystem::path codePath_;
+		std::string codePath_;
 
-		sol::coroutine coroutine_;
-		sol::thread luaThread_;
-		sol::environment env_;
+		lua_State* co_ = nullptr;
 	};
 } // namespace Lunatic

@@ -54,7 +54,7 @@ end
 
 -- Handle the user selecting a cell (either player)
 local function handleUserAction()
-	local mousePos = engine:getMousePos()
+	local mousePos = engine.mousePos
 	local mouseWPos = camera:screenToWorld(mousePos)
 
 	for i, col in pairs(cells) do
@@ -68,7 +68,7 @@ local function handleUserAction()
 
 				-- Check click
 				local left = engine:getMouseButtonState(0)
-				if left == 1 then
+				if left == 1 then -- Pressed
 					cell.data["state"] = placingX and "x" or "o"
 					cell.texturePath = placingX and getRandomTexPath("x") or getRandomTexPath("o")
 					cell.color = vec4.new(1, 1, 1, 1)
@@ -126,10 +126,13 @@ local function checkWinner()
 	end
 
 	-- Check for draw (we check every cell is not default)
+	-- Consider a draw only if all cells are actually placed ("x" or "o").
+	-- States like "default" or "hovered" should NOT count as filled.
 	local isDraw = true
 	for i = 1, 3 do
 		for j = 1, 3 do
-			if cells[i][j].data["state"] == "default" then
+			local st = cells[i][j].data["state"]
+			if st ~= "x" and st ~= "o" then
 				isDraw = false
 			end
 		end
@@ -231,7 +234,6 @@ function handleAITurn()
     end
     
     if bi then
-        print(tostring(bi)..","..tostring(bj))
         local cell = cells[bi][bj]
         cell.data.state = "o"
         cell.texturePath = getRandomTexPath("o")
@@ -243,7 +245,7 @@ end
 
 -- Main loop
 while true do
-	local mousePos = engine:getMousePos()
+	local mousePos = engine.mousePos
 	local worldPos = camera:screenToWorld(mousePos)
 
 	cursor.position = worldPos
@@ -284,7 +286,7 @@ while true do
 		while iters < 120 do
 			iters = iters + 1
 			engine:drawText(vec2.new(0, 0.95), winner == "draw" and "It's a draw!" or (winner.." wins!"), vec4.new(0, 0, 0, 1))
-			yield()
+			coroutine.yield()
 		end
 		initBoard()
 	end
@@ -296,5 +298,5 @@ while true do
 		handleAITurn()
 	end
 	
-	yield()
+	coroutine.yield()
 end

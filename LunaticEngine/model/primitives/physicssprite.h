@@ -49,10 +49,6 @@ namespace Lunatic {
 		void setTorque(float t) const;
 		float getTorque() const { return lastTorque_; }
 
-		void setOnCollisionEnter(std::function<sol::object(const std::vector<sol::object>&)> func) {
-			onCollisionEnterCB_ = func;
-		}
-
 		void setLinearVelocity(glm::vec2 v) const;
 		glm::vec2 getLinearVelocity() const;
 		void setAngularVelocity(float w) const; // radians/sec
@@ -94,7 +90,7 @@ namespace Lunatic {
 
 		std::string bodyType_ = "dynamic";
 
-		std::function<sol::object(const std::vector<sol::object>&)> onCollisionEnterCB_;
+		// TODO: lua callback fn
 
 		mutable glm::vec2 lastForce_{ 0.0f, 0.0f };
 		mutable glm::vec2 lastForcePoint_{ 0.0f, 0.0f };

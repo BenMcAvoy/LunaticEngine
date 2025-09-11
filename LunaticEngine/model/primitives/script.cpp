@@ -9,467 +9,295 @@
 
 using namespace Lunatic;
 
+// Helper functions to register simple vector metatables for arithmetic in Lua
+static int luavec_read_component(lua_State* L, int idx, const char* key, int numericIndex, float def) {
+    lua_getfield(L, idx, key);
+    bool has = !lua_isnil(L, -1);
+    float val = def;
+    if (has) val = static_cast<float>(luaL_optnumber(L, -1, def));
+    lua_pop(L, 1);
+    if (!has && numericIndex > 0) {
+        lua_rawgeti(L, idx, numericIndex);
+        val = static_cast<float>(luaL_optnumber(L, -1, def));
+        lua_pop(L,1);
+    }
+    return *reinterpret_cast<int*>(&val); // not used directly; helper kept for symmetry
+}
+
+static void luavec_readN(lua_State* L, int idx, int n, float* out) {
+    const char* keysXY[4] = {"x","y","z","w"};
+    const char* keysRGB[4] = {"r","g","b","a"};
+    for (int k=0;k<n;++k) {
+        // default 0
+        float v = 0.0f; bool has = false;
+        lua_getfield(L, idx, keysXY[k]); has = !lua_isnil(L, -1); if (has) v = static_cast<float>(luaL_optnumber(L, -1, 0.0)); lua_pop(L,1);
+        if (!has) { lua_getfield(L, idx, keysRGB[k]); has = !lua_isnil(L, -1); if (has) v = static_cast<float>(luaL_optnumber(L, -1, 0.0)); lua_pop(L,1); }
+        if (!has) { lua_rawgeti(L, idx, k+1); v = static_cast<float>(luaL_optnumber(L, -1, 0.0)); lua_pop(L,1); }
+        out[k] = v;
+    }
+}
+
+static void luavec_pushN(lua_State* L, int n, const float* v, const char* mtName) {
+    const char* keysXY[4] = {"x","y","z","w"};
+    const char* keysRGB[4] = {"r","g","b","a"};
+    lua_newtable(L);
+    for (int k=0;k<n;++k) { lua_pushnumber(L, v[k]); lua_setfield(L, -2, keysXY[k]); }
+    for (int k=0;k<n && keysRGB[k];++k) { lua_pushnumber(L, v[k]); lua_setfield(L, -2, keysRGB[k]); }
+    for (int k=0;k<n;++k) { lua_pushnumber(L, v[k]); lua_rawseti(L, -2, k+1); }
+    luaL_getmetatable(L, mtName); lua_setmetatable(L, -2);
+}
+
+static int luavec_add(lua_State* L) {
+    int n = static_cast<int>(lua_tointeger(L, lua_upvalueindex(1)));
+    const char* mtName = lua_tostring(L, lua_upvalueindex(2));
+    float a[4]{}, b[4]{}; luavec_readN(L, 1, n, a); luavec_readN(L, 2, n, b);
+    for (int i=0;i<n;++i) a[i] += b[i];
+    luavec_pushN(L, n, a, mtName);
+    return 1;
+}
+static int luavec_sub(lua_State* L) {
+    int n = static_cast<int>(lua_tointeger(L, lua_upvalueindex(1)));
+    const char* mtName = lua_tostring(L, lua_upvalueindex(2));
+    float a[4]{}, b[4]{}; luavec_readN(L, 1, n, a); luavec_readN(L, 2, n, b);
+    for (int i=0;i<n;++i) a[i] -= b[i];
+    luavec_pushN(L, n, a, mtName);
+    return 1;
+}
+static int luavec_mul(lua_State* L) {
+    int n = static_cast<int>(lua_tointeger(L, lua_upvalueindex(1)));
+    const char* mtName = lua_tostring(L, lua_upvalueindex(2));
+    float v[4]{}; float s = 1.0f;
+    if (lua_istable(L, 1) && lua_isnumber(L, 2)) { luavec_readN(L, 1, n, v); s = static_cast<float>(lua_tonumber(L, 2)); }
+    else if (lua_isnumber(L, 1) && lua_istable(L, 2)) { s = static_cast<float>(lua_tonumber(L, 1)); luavec_readN(L, 2, n, v); }
+    else return luaL_error(L, "__mul expects (vec, number) or (number, vec)");
+    for (int i=0;i<n;++i) v[i] *= s;
+    luavec_pushN(L, n, v, mtName);
+    return 1;
+}
+static int luavec_div(lua_State* L) {
+    int n = static_cast<int>(lua_tointeger(L, lua_upvalueindex(1)));
+    const char* mtName = lua_tostring(L, lua_upvalueindex(2));
+    float v[4]{}; float s = 1.0f;
+    if (lua_istable(L, 1) && lua_isnumber(L, 2)) { luavec_readN(L, 1, n, v); s = static_cast<float>(lua_tonumber(L, 2)); }
+    else return luaL_error(L, "__div expects (vec, number)");
+    if (s == 0.0f) return luaL_error(L, "division by zero");
+    for (int i=0;i<n;++i) v[i] /= s;
+    luavec_pushN(L, n, v, mtName);
+    return 1;
+}
+static int luavec_unm(lua_State* L) {
+    int n = static_cast<int>(lua_tointeger(L, lua_upvalueindex(1)));
+    const char* mtName = lua_tostring(L, lua_upvalueindex(2));
+    float v[4]{}; luavec_readN(L, 1, n, v);
+    for (int i=0;i<n;++i) v[i] = -v[i];
+    luavec_pushN(L, n, v, mtName);
+    return 1;
+}
+static void luavec_register_mt(lua_State* L, const char* mtName, int n) {
+    if (luaL_newmetatable(L, mtName)) {
+        lua_pushinteger(L, n); lua_pushstring(L, mtName); lua_pushcclosure(L, luavec_add, 2); lua_setfield(L, -2, "__add");
+        lua_pushinteger(L, n); lua_pushstring(L, mtName); lua_pushcclosure(L, luavec_sub, 2); lua_setfield(L, -2, "__sub");
+        lua_pushinteger(L, n); lua_pushstring(L, mtName); lua_pushcclosure(L, luavec_mul, 2); lua_setfield(L, -2, "__mul");
+        lua_pushinteger(L, n); lua_pushstring(L, mtName); lua_pushcclosure(L, luavec_div, 2); lua_setfield(L, -2, "__div");
+        lua_pushinteger(L, n); lua_pushstring(L, mtName); lua_pushcclosure(L, luavec_unm, 2); lua_setfield(L, -2, "__unm");
+    }
+    lua_pop(L, 1);
+}
+
 Script::Script(std::string_view name) : Instance(name), Updateable() {
     typeInfo = rttr::type::get<Script>();
 }
 
-rttr::variant solFNToRTTR(sol::object obj) {
-    if (obj.get_type() == sol::type::function) {
-        auto fn = obj.as<sol::function>();
-		// TODO: This could probably be a std::span
-        return std::function<sol::object(const std::vector<sol::object>&)>(
-            [fn](const std::vector<sol::object>& args) -> sol::object {
-                return fn(sol::as_args(args));
-            }
-        );
-    }
-
-    spdlog::warn("Tried to parse a non-function as function... none");
-    return {};
-}
-
-rttr::variant solToRTTR(sol::object obj) {
-    auto type = obj.get_type();
-
-    switch (type) {
-    case sol::type::none:
-    case sol::type::lua_nil:
-        return {};
-    case sol::type::string:
-        return obj.as<std::string_view>();
-    case sol::type::number:
-		return obj.as<float>();
-    case sol::type::thread:
-        spdlog::warn("Tried to parse a thread... none");
-        return {};
-    case sol::type::boolean:
-        return obj.as<bool>();
-    case sol::type::function:
-		return solFNToRTTR(obj);
-    case sol::type::userdata:
-        if (obj.is<glm::vec2>()) {
-            auto& vec2 = obj.as<glm::vec2>();
-            return vec2;
-        }
-        else if (obj.is<glm::vec4>()) {
-            return obj.as<glm::vec4>();
-        }
-        else if (obj.is<std::shared_ptr<Instance>>()) {
-            auto& sp = obj.as<std::shared_ptr<Instance>>();
-            return sp;
-		}
-        else {
-            spdlog::warn("Tried to parse an unknown userdata... none");
-            return {};
-        }
-    case sol::type::lightuserdata:
-        spdlog::warn("Tried to parse a lightuserdata... none");
-        return {};
-    case sol::type::table:
-        spdlog::warn("Tried to parse a table... none");
-        return {};
-    case sol::type::poly:
-        spdlog::warn("Tried to parse poly... none");
-        return {};
-    default:
-        spdlog::warn("Tried to parse unknown type... none");
-        return {};
-    };
-}
-
-sol::object rttrToSol(sol::state_view lua, const rttr::variant& var, std::string_view context) {
-	if (!var.is_valid() || var.is_type<void>())
-        return sol::nil;
-
-    rttr::type t = var.get_type();
-
-    if (t == rttr::type::get<int>())
-        return sol::make_object(lua, var.to_int());
-    else if (t == rttr::type::get<double>())
-        return sol::make_object(lua, var.to_double());
-    else if (t == rttr::type::get<float>())
-        return sol::make_object(lua, static_cast<float>(var.to_double()));
-    else if (t == rttr::type::get<bool>())
-        return sol::make_object(lua, var.to_bool());
-    else if (t == rttr::type::get<std::string>())
-        return sol::make_object(lua, var.to_string());
-    else if (t.is_pointer() || t.is_class())
-    {
-		// if it's a ptr to a Lunatic::Instance return as shared_ptr
-        if (t == rttr::type::get<std::shared_ptr<Instance>>()) {
-            auto& sp = var.get_value<std::shared_ptr<Instance>>();
-            if (sp)
-                return sol::make_object(lua, sp);
-            else
-                return sol::nil;
-		}
-
-		// if its a vec<shrdptr<Instance>>
-        if (t == rttr::type::get<std::vector<std::shared_ptr<Instance>>>()) {
-            auto& vec = var.get_value<std::vector<std::shared_ptr<Instance>>>();
-			// Create a Lua table
-			sol::table luaTable = lua.create_table(static_cast<int>(vec.size()), 0);
-            for (size_t i = 0; i < vec.size(); ++i) {
-                if (vec[i]) {
-                    luaTable[i + 1] = vec[i]; // Lua tables are 1-indexed
-                }
-                else {
-                    luaTable[i + 1] = sol::nil;
-                }
-            }
-
-			return luaTable;
-        }
-
-        // glm::vec2
-        if (t == rttr::type::get<glm::vec2>()) {
-            auto& vec = var.get_value<glm::vec2>();
-            return sol::make_object(lua, vec);
-		}
-
-		// glm::vec4
-        if (t == rttr::type::get<glm::vec4>()) {
-            auto& vec = var.get_value<glm::vec4>();
-            return sol::make_object(lua, vec);
-		}
-
-		// if it's a std::string_view
-        if (t == rttr::type::get<std::string_view>()) {
-            auto& sv = var.get_value<std::string_view>();
-            return sol::make_object(lua, sv);
-		}
-
-        spdlog::warn("ptr/class");
-        // For user-defined types, push the raw pointer (or wrap in shared_ptr)
-        // todo: proper
-        void* ptr = var.get_value<void*>();
-        if (ptr)
-            return sol::make_object(lua, ptr);
-        else
-            return sol::nil;
-    }
-
-	spdlog::warn("nil, type was {} whilst calling {}", t.get_name().to_string(), context);
-    return sol::nil; // fallback
-}
-
-void Script::loadCode(std::string path) {
-    coroutine_ = sol::coroutine();
-    env_ = sol::environment();
-    finished_ = false;
-
+void Script::loadCode(std::string_view path) {
     if (!luaInit_) {
-        lua_.open_libraries(sol::lib::base, sol::lib::package, sol::lib::string,
-			sol::lib::math, sol::lib::table, sol::lib::coroutine, sol::lib::os);
+        L_ = luaL_newstate();
+        luaL_openlibs(L_); // TODO: Sandbox out `os` and `io` libraries, anything dangerous
 
-        lua_.set_function("print", [](const std::string& msg) {
-            spdlog::info("[LUA] {}", msg);
-            });
 
-        auto indexFunc = [](sol::this_state ts, Instance& inst, std::string_view key) -> sol::object {
-            auto ss = inst.shared_from_this();
-            if (!ss) return sol::nil;
-
-            rttr::type& t = inst.typeInfo;
-            rttr::variant obj = std::ref(inst);
-
-            auto prop = t.get_property(key.data());
-
-            if (prop.is_valid()) {
-                auto var = prop.get_value(obj);
-                if (!var.is_valid()) {
-                    spdlog::warn("Invalid variant");
-                    return {};
-                }
-                return rttrToSol(ts, var, key);
-            }
-
-            auto method = t.get_method(key.data());
-            if (method.is_valid()) {
-                auto thunk = [method, obj](sol::this_state ts, sol::variadic_args va) -> sol::object {
-                    auto it = va.begin();
-                    auto end = va.end();
-                    if (it == end) return sol::make_object(ts, sol::nil);
-                    ++it; // skip first
-                    size_t arg_count = 0;
-                    for (auto tmp = it; tmp != end; ++tmp) ++arg_count;
-
-                    std::vector<rttr::argument> args;
-                    args.reserve(arg_count);
-                    std::vector<rttr::variant> arg_storage;
-                    arg_storage.reserve(arg_count);
-
-                    std::vector<std::string> strs;
-                    strs.reserve(arg_count);
-
-                    for (; it != end; ++it) {
-                        if (it->is<std::string_view>()) {
-                            std::string str = it->as<std::string>();
-                            spdlog::trace("Pushed string arg: {}", str);
-                            strs.emplace_back(str);
-
-                            arg_storage.emplace_back(rttr::variant(std::string_view(strs.back())));
-                            args.emplace_back(arg_storage.back());
-                        }
-                        else {
-                            auto res = solToRTTR(*it);
-                            if (!res.is_valid()) {
-                                spdlog::warn("Invalid argument variant");
-                                return sol::make_object(ts, sol::nil);
-                            }
-                            arg_storage.emplace_back(res);
-                            args.emplace_back(arg_storage.back());
-                        }
-                    }
-
-                    auto ret = method.invoke_variadic(obj, args);
-                    if (!ret.is_valid()) return sol::make_object(ts, sol::nil);
-
-                    return rttrToSol(ts, ret, method.get_name().to_string());
-                    };
-                return sol::make_object(ts, thunk);
-            }
-
-			// see if they are trying to access `data` (`LuaUserData`)
-            if (key == "data") {
-                return sol::make_object(ts, &inst.luaUserData);
-			}
-
-			spdlog::warn("No property or method named '{}' in type '{}'", key, t.get_name().to_string());
-			return sol::nil;
-            };
-
-        auto newIndexFunc = [](sol::this_state ts, Instance& inst, std::string_view key, sol::object value) {
-            auto ss = inst.shared_from_this();
-            if (!ss) return;
-            rttr::type& t = inst.typeInfo;
-            rttr::variant obj = std::ref(inst);
-            auto prop = t.get_property(key.data());
-            if (prop.is_valid()) {
-                rttr::variant var = solToRTTR(value);
-                if (!var.is_valid()) {
-                    spdlog::warn("Invalid variant");
-                    return;
-                }
-                bool success = prop.set_value(obj, var);
-                if (!success) {
-                    spdlog::warn("Failed to set property '{}'", key);
-                }
-            }
-            else {
-                spdlog::warn("No property named '{}' in type '{}'", key, t.get_name().to_string());
-            }
-			};
-
-        lua_.new_usertype<Instance>("Instance",
-            sol::meta_function::index, indexFunc,
-			sol::meta_function::new_index, newIndexFunc
-        );
-
-        // Bind Engine type (directly, no meta)
-        lua_.new_usertype<Engine>("Engine",
-            "getInstance", &Engine::getInstance,
-            "getMouseX", &Engine::getMouseX,
-            "getMouseY", &Engine::getMouseY,
-			"getMousePos", &Engine::getMousePos,
-			"getMouseButtonState", &Engine::getMouseButtonState,
-			"getKeyState", &Engine::getKeyState,
-			"drawText", &Engine::drawText,
-			"hideCursor", &Engine::hideCursor,
-			"showCursor", &Engine::showCursor
-		);
-
-        // glm::vec2 binding
-        lua_.new_usertype<glm::vec2>("vec2",
-            sol::constructors<glm::vec2(), glm::vec2(float, float)>(),
-            "x", &glm::vec2::x,
-            "y", &glm::vec2::y,
-            sol::meta_function::to_string, [](const glm::vec2& v) {
-                return "vec2(" + std::to_string(v.x) + ", " + std::to_string(v.y) + ")";
-			},
-			sol::meta_function::length, [](const glm::vec2&) { return 2; },
-			sol::meta_function::addition, sol::overload(
-                [](const glm::vec2& a, const glm::vec2& b) { return a + b; },
-                [](const glm::vec2& a, float b) { return a + glm::vec2(b); },
-                [](float a, const glm::vec2& b) { return glm::vec2(a) + b; }
-			),
-            sol::meta_function::subtraction, sol::overload(
-                [](const glm::vec2& a, const glm::vec2& b) { return a - b; },
-                [](const glm::vec2& a, float b) { return a - glm::vec2(b); },
-				[](float a, const glm::vec2& b) { return glm::vec2(a) - b; }
-            ),
-            sol::meta_function::multiplication, sol::overload(
-                [](const glm::vec2& a, const glm::vec2& b) { return a * b; },
-				[](const glm::vec2& a, float b) { return a * glm::vec2(b); },
-                [](float a, const glm::vec2& b) { return glm::vec2(a) * b; }
-            ),
-            sol::meta_function::division, sol::overload(
-                [](const glm::vec2& a, const glm::vec2& b) { return a / b; },
-                [](const glm::vec2& a, float b) { return a / glm::vec2(b); },
-                [](float a, const glm::vec2& b) { return glm::vec2(a) / b; }
-            ),
-            sol::meta_function::unary_minus, [](const glm::vec2& v) { return -v; },
-            sol::meta_function::equal_to, [](const glm::vec2& a, const glm::vec2& b) { return a == b; },
-            "length", [](const glm::vec2& v) { return glm::length(v); },
-			"normalize", [](const glm::vec2& v) { return glm::normalize(v); }
-		);
-
-        // glm::vec4 binding
-        lua_.new_usertype<glm::vec4>("vec4",
-            sol::constructors<glm::vec4(), glm::vec4(float, float, float, float)>(),
-            "x", &glm::vec4::x,
-            "y", &glm::vec4::y,
-            "z", &glm::vec4::z,
-            "w", &glm::vec4::w
-        );
-
-		// LuaUserData binding
-        lua_.new_usertype<LuaUserData>("LuaUserData",
-            sol::no_constructor,
-            sol::meta_function::index, [](LuaUserData& luaData, std::string key) {
-                return luaData.get(key);
-			},
-			sol::meta_function::new_index, [](LuaUserData& luaData, std::string key, sol::stack_object value) {
-                luaData.set(key, value);
-			},
-            sol::meta_function::to_string, [](const LuaUserData&) {
-                return "LuaUserData";
-            },
-			sol::meta_function::length, [](const LuaUserData& luaData) { return luaData.size(); },
-			"clear", &LuaUserData::clear
-		);
-
-        // create an `Instance` table with a `new` method
-        lua_["Instance"]["new"] = [](std::string className, std::string name) -> std::shared_ptr<Instance> {
-            rttr::type t = rttr::type::get_by_name(className);
-            if (!t.is_valid()) {
-                spdlog::error("No class named '{}' found", className);
-                return nullptr;
-            }
-
-			auto method = t.get_method("construct");
-            if (!method.is_valid()) {
-                spdlog::error("Class '{}' has no construct method", className);
-                return nullptr;
-            }
-			std::string_view nameSV = name;
-			rttr::variant nameVar = nameSV;
-            rttr::variant obj = method.invoke({}, nameVar);
-            if (!obj.is_valid()) {
-                spdlog::error("Failed to construct instance of class '{}'", className);
-                return nullptr;
-            }
-            auto& inst = obj.get_value<std::shared_ptr<Instance>>();
-            if (!inst) {
-                spdlog::error("Construct method of class '{}' did not return an Instance", className);
-                return nullptr;
-			}
-
-            return inst;
-			};
-
-        // For keys a-Z, generate constants for their IDs in the keys table
-		lua_["keys"] = lua_.create_table_with(
-            "unknown", -1,
-            "space", 32,
-            "apostrophe", 39,
-            "comma", 44,
-            "minus", 45,
-            "period", 46,
-            "slash", 47,
-            "0", 48,
-            "1", 49,
-            "2", 50,
-            "3", 51,
-            "4", 52,
-            "5", 53,
-            "6", 54,
-            "7", 55,
-            "8", 56,
-            "9", 57,
-            "semicolon", 59,
-            "equal", 61,
-            "a", 65,
-            "b", 66,
-            "c", 67,
-            "d", 68,
-            "e", 69,
-            "f", 70,
-            "g", 71,
-            "h", 72,
-            "i", 73,
-            "j", 74,
-            "k", 75,
-            "l", 76,
-            "m", 77,
-            "n", 78,
-            "o", 79,
-            "p", 80,
-            "q", 81,
-            "r", 82,
-            "s", 83,
-            "t", 84,
-            "u", 85,
-            "v", 86,
-            "w", 87,
-            "x", 88,
-            "y", 89,
-            "z", 90,
-            "left_bracket", 91,
-            "backslash", 92,
-            "right_bracket", 93,
-            "grave_accent", 96,
-            "escape", 256,
-            "enter", 257,
-            "tab", 258,
-            "backspace", 259,
-            "insert", 260,
-            "del", 261,
-            "right", 262,
-            "left", 263,
-            "down", 264,
-            "up", 265
-        );
-
-		lua_["yield"] = lua_["coroutine"]["yield"];
 
         luaInit_ = true;
     }
 
-    std::ifstream file(path.c_str());
-    if (!file.is_open()) {
-        spdlog::error("Failed to open script file: {}", path);
-        return;
-	}
     codePath_ = path;
-    std::string code((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-	file.close();
-
-    sol::load_result lr = lua_.load(code, path.c_str());
-    if (!lr.valid()) {
-        sol::error err = lr;
-        spdlog::error("Lua load error in script {}: {}", getName(), err.what());
+    if (luaL_loadfile(L_, codePath_.data()) != LUA_OK) {
+        spdlog::error("Lua load error in script {}: {}", getName(), lua_tostring(L_, -1));
+        lua_pop(L_, 1); // remove error message
         finished_ = true;
         return;
     }
 
-    luaThread_ = sol::thread::create(lua_);
-    sol::state_view co = luaThread_.state();
-    // Create the environment from the thread state
-    env_ = sol::environment(co, sol::create, co.globals());
-    // Get the loaded function and set env on it
-    sol::protected_function fn = lr;
-    sol::set_environment(env_, fn);
-    // Move the function to the thread
-    fn.push();
-    lua_xmove(lua_.lua_state(), co.lua_state(), 1);
-    // Re-wrap the moved function, and set env
-    sol::function cofn(co, -1);
-    sol::set_environment(env_, cofn);
-	static auto& engine = Engine::getInstance();
-	env_["engine"] = &engine;
-    // Build the coroutine from the thread's function
-    coroutine_ = sol::coroutine(cofn);
+    co_ = lua_newthread(L_);
+    lua_pushvalue(L_, -2); // copy the loaded chunk to the top of the stack
+    lua_xmove(L_, co_, 1); // move the chunk to the coroutine
+    lua_pop(L_, 1); // remove the original chunk from the main stack
+    if (co_ == nullptr) {
+        spdlog::error("Failed to create Lua coroutine for script {}", getName());
+        finished_ = true;
+        return;
+    }
+
+    /* HACK: environment example:
+    lua_newtable(co_);
+    lua_pushvalue(co_, -1);
+    lua_setglobal(co_, "_ENV");
+    */
+
+    //env = setmetatable({
+    //   root = <userdata>, script = <userdata>, print = <closure>
+    // }, { __index = _G })
+    // so that multiple scripts don't share the same globals (esp. `script`).
+    // Stack: co_ has the chunk function on top right now.
+    // Create env table
+    lua_newtable(co_); // env
+
+    // env.root
+    {
+        auto& engine = Engine::getInstance();
+        auto& root = engine.rootInstance;
+        LuaInstance::createInLua(root, co_);    // push userdata
+        lua_setfield(co_, -2, "root");         // env.root = userdata (pops userdata)
+    }
+
+    // env.script
+    {
+        auto script = shared_from_this();
+        LuaInstance::createInLua(script, co_);  // push userdata
+        lua_setfield(co_, -2, "script");       // env.script = userdata (pops userdata)
+    }
+
+    // env.print
+    {
+        // Push the Script* as a lightuserdata upvalue for the closure
+        lua_pushlightuserdata(co_, this);
+        lua_pushcclosure(co_, [](lua_State* L) -> int {
+            Script* script = static_cast<Script*>(lua_touserdata(L, lua_upvalueindex(1)));
+
+            int n = lua_gettop(L);
+            std::string output;
+            for (int i = 1; i <= n; ++i) {
+                lua_getglobal(L, "tostring");
+                lua_pushvalue(L, i);
+                if (lua_pcall(L, 1, 1, 0) != LUA_OK) {
+                    const char* err = lua_tostring(L, -1);
+                    output += "<tostring error: ";
+                    if (err) output += err;
+                    output += ">";
+                    lua_pop(L, 1);
+                } else {
+                    size_t len = 0;
+                    const char* str = lua_tolstring(L, -1, &len);
+                    if (str && len > 0) output.append(str, len);
+                    lua_pop(L, 1);
+                }
+                if (i < n) output += "\t";
+            }
+
+            std::string name = script ? std::string(script->getName()) : std::string("<unknown>");
+            spdlog::info("[Lua][{}]: {}", name, output);
+            return 0;
+        }, 1);
+        lua_setfield(co_, -2, "print"); // env.print = closure
+    }
+
+    // env.engine (create a LuaEngine from Engine::getInstance())
+    {
+        auto& engine = Engine::getInstance();
+        LuaEngine::createInLua(&engine, co_);    // push userdata
+        lua_setfield(co_, -2, "engine");         // env.engine = userdata (pops userdata)
+    }
+
+    // env.vec2: table with __call constructor and constants
+    lua_pushcfunction(co_, [](lua_State* L) -> int {
+        float x = static_cast<float>(luaL_checknumber(L, 1));
+        float y = static_cast<float>(luaL_checknumber(L, 2));
+        lua_newtable(L);
+        lua_pushnumber(L, x); lua_setfield(L, -2, "x");
+        lua_pushnumber(L, y); lua_setfield(L, -2, "y");
+        return 1;
+    });
+    int vec2_ctor = lua_gettop(co_);
+    lua_newtable(co_);                 // vec2 table
+    lua_pushvalue(co_, vec2_ctor); lua_setfield(co_, -2, "new");
+    lua_newtable(co_);                 // mt
+    lua_pushvalue(co_, vec2_ctor); lua_setfield(co_, -2, "__call");
+    lua_setmetatable(co_, -2);         // setmetatable(vec2, mt)
+    // constants
+    lua_pushvalue(co_, vec2_ctor); lua_pushnumber(co_, 0); lua_pushnumber(co_, 0); lua_call(co_, 2, 1); lua_setfield(co_, -2, "zero");
+    lua_pushvalue(co_, vec2_ctor); lua_pushnumber(co_, 1); lua_pushnumber(co_, 1); lua_call(co_, 2, 1); lua_setfield(co_, -2, "one");
+    lua_setfield(co_, -3, "vec2");   // env.vec2 = vec2 table
+    lua_pop(co_, 1); // pop ctor
+
+    // env.vec3: table with __call constructor and constants
+    lua_pushcfunction(co_, [](lua_State* L) -> int {
+        float x = static_cast<float>(luaL_checknumber(L, 1));
+        float y = static_cast<float>(luaL_checknumber(L, 2));
+        float z = static_cast<float>(luaL_checknumber(L, 3));
+        lua_newtable(L);
+        lua_pushnumber(L, x); lua_setfield(L, -2, "x");
+        lua_pushnumber(L, y); lua_setfield(L, -2, "y");
+        lua_pushnumber(L, z); lua_setfield(L, -2, "z");
+        lua_pushnumber(L, x); lua_setfield(L, -2, "r");
+        lua_pushnumber(L, y); lua_setfield(L, -2, "g");
+        lua_pushnumber(L, z); lua_setfield(L, -2, "b");
+        return 1;
+    });
+    int vec3_ctor = lua_gettop(co_);
+    lua_newtable(co_);
+    lua_pushvalue(co_, vec3_ctor); lua_setfield(co_, -2, "new");
+    lua_newtable(co_);
+    lua_pushvalue(co_, vec3_ctor); lua_setfield(co_, -2, "__call");
+    lua_setmetatable(co_, -2);
+    // constants
+    // black and white (RGB)
+    lua_pushvalue(co_, vec3_ctor); lua_pushnumber(co_, 0); lua_pushnumber(co_, 0); lua_pushnumber(co_, 0); lua_call(co_, 3, 1); lua_setfield(co_, -2, "black");
+    lua_pushvalue(co_, vec3_ctor); lua_pushnumber(co_, 1); lua_pushnumber(co_, 1); lua_pushnumber(co_, 1); lua_call(co_, 3, 1); lua_setfield(co_, -2, "white");
+    lua_setfield(co_, -3, "vec3");
+    lua_pop(co_, 1);
+
+    // env.vec4: table with __call constructor and color constants
+    lua_pushcfunction(co_, [](lua_State* L) -> int {
+        float x = static_cast<float>(luaL_checknumber(L, 1));
+        float y = static_cast<float>(luaL_checknumber(L, 2));
+        float z = static_cast<float>(luaL_checknumber(L, 3));
+        float w = static_cast<float>(luaL_checknumber(L, 4));
+        lua_newtable(L);
+        lua_pushnumber(L, x); lua_setfield(L, -2, "x");
+        lua_pushnumber(L, y); lua_setfield(L, -2, "y");
+        lua_pushnumber(L, z); lua_setfield(L, -2, "z");
+        lua_pushnumber(L, w); lua_setfield(L, -2, "w");
+        lua_pushnumber(L, x); lua_setfield(L, -2, "r");
+        lua_pushnumber(L, y); lua_setfield(L, -2, "g");
+        lua_pushnumber(L, z); lua_setfield(L, -2, "b");
+        lua_pushnumber(L, w); lua_setfield(L, -2, "a");
+        return 1;
+    });
+    int vec4_ctor = lua_gettop(co_);
+    lua_newtable(co_);
+    lua_pushvalue(co_, vec4_ctor); lua_setfield(co_, -2, "new");
+    lua_newtable(co_);
+    lua_pushvalue(co_, vec4_ctor); lua_setfield(co_, -2, "__call");
+    lua_setmetatable(co_, -2);
+    // common color constants
+    // white, black, red, green, blue, transparent
+    lua_pushvalue(co_, vec4_ctor); lua_pushnumber(co_, 1); lua_pushnumber(co_, 1); lua_pushnumber(co_, 1); lua_pushnumber(co_, 1); lua_call(co_, 4, 1); lua_setfield(co_, -2, "white");
+    lua_pushvalue(co_, vec4_ctor); lua_pushnumber(co_, 0); lua_pushnumber(co_, 0); lua_pushnumber(co_, 0); lua_pushnumber(co_, 1); lua_call(co_, 4, 1); lua_setfield(co_, -2, "black");
+    lua_pushvalue(co_, vec4_ctor); lua_pushnumber(co_, 1); lua_pushnumber(co_, 0); lua_pushnumber(co_, 0); lua_pushnumber(co_, 1); lua_call(co_, 4, 1); lua_setfield(co_, -2, "red");
+    lua_pushvalue(co_, vec4_ctor); lua_pushnumber(co_, 0); lua_pushnumber(co_, 1); lua_pushnumber(co_, 0); lua_pushnumber(co_, 1); lua_call(co_, 4, 1); lua_setfield(co_, -2, "green");
+    lua_pushvalue(co_, vec4_ctor); lua_pushnumber(co_, 0); lua_pushnumber(co_, 0); lua_pushnumber(co_, 1); lua_pushnumber(co_, 1); lua_call(co_, 4, 1); lua_setfield(co_, -2, "blue");
+    lua_pushvalue(co_, vec4_ctor); lua_pushnumber(co_, 0); lua_pushnumber(co_, 0); lua_pushnumber(co_, 0); lua_pushnumber(co_, 0); lua_call(co_, 4, 1); lua_setfield(co_, -2, "transparent");
+    lua_setfield(co_, -3, "vec4");
+    lua_pop(co_, 1);
+
+    // Register vector metatables (once per state)
+    luavec_register_mt(co_, "LuaVec2Meta", 2);
+    luavec_register_mt(co_, "LuaVec3Meta", 3);
+    luavec_register_mt(co_, "LuaVec4Meta", 4);
+
+    lua_newtable(co_);                // mt
+    lua_pushvalue(co_, LUA_GLOBALSINDEX); // push _G
+    lua_setfield(co_, -2, "__index"); // mt.__index = _G (pops _G)
+    lua_setmetatable(co_, -2);         // setmetatable(env, mt) (pops mt)
+    lua_setfenv(co_, -2);              // setfenv(chunk, env) (pops env)
 
     finished_ = false;
 }
@@ -482,8 +310,7 @@ void Script::reloadCode() {
 
     // We should clear all luaDataStores since reloading scripts wipes the backing data
 	Engine::getInstance().clearAllLuaData();
-
-    loadCode(codePath_.string());
+    loadCode(codePath_);
 }
 
 void Script::update() {
@@ -491,22 +318,25 @@ void Script::update() {
 		return; // No code to execute
 	}
 
-	env_["script"] = static_cast<Instance*>(this);
-	static auto& engine = Engine::getInstance();
-    env_["root"] = engine.rootInstance.get();
+	//env_["script"] = static_cast<Instance*>(this);
+	//static auto& engine = Engine::getInstance();
+    //env_["root"] = engine.rootInstance.get();
 
-	sol::protected_function_result result = coroutine_();
+    // TODO: bind userdatas
 
-	if (!result.valid()) {
-		sol::error err = result;
-		spdlog::error("Lua error in script {}: {}", getName(), err.what());
-		finished_ = true;
-		return;
-	}
-
-	if (result.status() == sol::call_status::yielded) {
-		return;
-	} else {
-		finished_ = true;
-	}
+    int status = lua_resume(co_, 0);
+    if (status == LUA_YIELD) {
+        // Coroutine yielded, continue next frame
+        return;
+    } else if (status == LUA_OK) {
+        // Coroutine finished successfully
+        finished_ = true;
+        return;
+    } else {
+        // An error occurred
+        spdlog::error("Lua runtime error in script {}: {}", getName(), lua_tostring(co_, -1));
+        lua_pop(co_, 1); // remove error message
+        finished_ = true;
+        return;
+    }
 }

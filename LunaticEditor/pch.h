@@ -21,9 +21,9 @@
 #include <rttr/type>
 #include <rttr/registration_friend>
 
-#include <nlohmann/json.hpp>
+#include <lua.hpp>
 
-#include <sol/sol.hpp>
+#include <nlohmann/json.hpp>
 
 #include <filesystem>
 #include <fstream>
